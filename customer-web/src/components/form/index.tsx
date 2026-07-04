@@ -1,0 +1,1 @@
+export function TextBox({label,name}:{label:string;name:string}){return <label className='block space-y-1'><span>{label}</span><input name={name} className='w-full rounded-xl border px-3 py-2'/></label>}export function Button({children}:{children:React.ReactNode}){return <button className='rounded-xl bg-blue-600 px-4 py-2 text-white'>{children}</button>}

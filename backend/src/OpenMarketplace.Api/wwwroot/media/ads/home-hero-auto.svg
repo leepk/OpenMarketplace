@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a8a"/><stop offset="1" stop-color="#60a5fa"/></linearGradient></defs>
+  <rect width="1200" height="420" rx="24" fill="url(#g)"/>
+  <circle cx="1020" cy="92" r="92" fill="white" opacity="0.18"/>
+  <circle cx="144" cy="344" r="75" fill="white" opacity="0.10"/>
+  <text x="36" y="189" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="800">Auto Buyer Week</text>
+  <text x="36" y="227" fill="white" opacity="0.88" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="500">Sponsored • OpenMarketplace</text>
+  <rect x="36" y="346" width="150" height="42" rx="21" fill="white" opacity="0.95"/>
+  <text x="62" y="373" fill="#1e3a8a" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="800">Learn more</text>
+</svg>

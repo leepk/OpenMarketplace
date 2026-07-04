@@ -1,0 +1,40 @@
+'use client';
+
+import Link from 'next/link';
+import { Icon } from '@/components/ui/Icon';
+import { HeaderUserMenu } from '@/components/layout/HeaderUserMenu';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
+import { useI18n } from '@/lib/i18n/client';
+
+export function SiteHeader() {
+  const { t } = useI18n();
+  return (
+    <header className="app-header">
+      <div className="app-header-inner shell-wide">
+        <Link href="/" className="logo-lockup" aria-label="OpenMarketplace home">
+          <span className="logo-pin"><Icon name="logo" size={25} /></span>
+          <span>{t('appName')}</span>
+        </Link>
+        <form className="global-search" action="/search">
+          <Icon name="search" size={18} />
+          <input name="q" placeholder={t('searchPlaceholder')} />
+        </form>
+        <select className="header-control" defaultValue="all" aria-label="Category">
+          <option value="all">{t('allCategories')}</option>
+          <option value="vehicles">{t('vehicles')}</option>
+          <option value="property-rentals">{t('propertyRentals')}</option>
+          <option value="for-sale">{t('forSale')}</option>
+          <option value="jobs">{t('jobs')}</option>
+          <option value="services">{t('services')}</option>
+          <option value="electronics">{t('electronics')}</option>
+        </select>
+        <select className="header-control location" defaultValue="San Jose, CA" aria-label="Location">
+          <option>San Jose, CA</option><option>Santa Clara, CA</option><option>Sunnyvale, CA</option><option>Milpitas, CA</option>
+        </select>
+        <LanguageSwitcher />
+        <Link href="/post" className="post-listing"><Icon name="plus" size={20} /> {t('postListing')}</Link>
+        <HeaderUserMenu />
+      </div>
+    </header>
+  );
+}

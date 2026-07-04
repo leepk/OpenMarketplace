@@ -1,0 +1,3 @@
+# Categories
+
+Organizes listing taxonomy.

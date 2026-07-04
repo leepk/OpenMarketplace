@@ -1,0 +1,1 @@
+using Microsoft.AspNetCore.Mvc;using OpenMarketplace.Shared.Api;namespace OpenMarketplace.Api.Controllers;[ApiController][Route("api/v1/health")]public sealed class HealthController:ControllerBase{[HttpGet]public ActionResult<ApiResponse<object>> Get()=>Ok(ApiResponse<object>.Ok(new{status="ok",app="OpenMarketplace.Api",time=DateTimeOffset.UtcNow},HttpContext.TraceIdentifier));}

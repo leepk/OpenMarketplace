@@ -1,0 +1,2 @@
+import { appConfig } from '@/lib/config';
+async function request<T>(path:string,init?:RequestInit){const r=await fetch(`${appConfig.apiBaseUrl}${path}`,{...init,headers:{'Content-Type':'application/json',...(init?.headers??{})}});const p=await r.json().catch(()=>null);if(!r.ok||p?.success===false)throw new Error(p?.error?.message??'API error');return (p?.data??p) as T;}export const apiClient={get:<T,>(path:string)=>request<T>(path),post:<T,>(path:string,body:unknown)=>request<T>(path,{method:'POST',body:JSON.stringify(body)})};
