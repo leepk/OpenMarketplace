@@ -470,13 +470,30 @@ public sealed class DatabaseSeeder(AppDbContext db, ILogger<DatabaseSeeder> logg
             );
         }
 
-        if (!await db.AppSettings.AnyAsync(ct))
+        var appSettingSeeds = new[]
         {
-            db.AppSettings.AddRange(
-                new AppSetting { Key = "commerce.default_currency", Value = "USD", IsPublic = true },
-                new AppSetting { Key = "listing.default_expiration_days", Value = "30", ValueType = "Int" },
-                new AppSetting { Key = "market.default_location", Value = "San Jose, CA", IsPublic = true }
-            );
+            new AppSetting { Key = "commerce.default_currency", Value = "USD", IsPublic = true },
+            new AppSetting { Key = "listing.default_expiration_days", Value = "30", ValueType = "Int" },
+            new AppSetting { Key = "market.default_location", Value = "San Jose, CA", IsPublic = true },
+            new AppSetting { Key = "site.name", Value = "OpenMarketplace", ValueType = "String", IsPublic = true },
+            new AppSetting { Key = "site.logo_url", Value = "/site/logo-openmarketplace.svg", ValueType = "ImageUrl", IsPublic = true },
+            new AppSetting { Key = "site.favicon_url", Value = "/site/favicon-openmarketplace.svg", ValueType = "ImageUrl", IsPublic = true },
+            new AppSetting { Key = "site.primary_color", Value = "#2563eb", ValueType = "Color", IsPublic = true },
+            new AppSetting { Key = "site.secondary_color", Value = "#f59e0b", ValueType = "Color", IsPublic = true },
+            new AppSetting { Key = "social.facebook_url", Value = "https://facebook.com/", ValueType = "Url", IsPublic = true },
+            new AppSetting { Key = "social.youtube_url", Value = "", ValueType = "Url", IsPublic = true },
+            new AppSetting { Key = "social.instagram_url", Value = "", ValueType = "Url", IsPublic = true },
+            new AppSetting { Key = "contact.email", Value = "support@openmarketplace.local", ValueType = "Email", IsPublic = true },
+            new AppSetting { Key = "contact.phone", Value = "", ValueType = "String", IsPublic = true },
+            new AppSetting { Key = "contact.address", Value = "Santa Clara, CA", ValueType = "String", IsPublic = true },
+            new AppSetting { Key = "footer.text", Value = "© OpenMarketplace. All rights reserved.", ValueType = "String", IsPublic = true },
+            new AppSetting { Key = "seo.title", Value = "OpenMarketplace - Local Classifieds", ValueType = "String", IsPublic = true },
+            new AppSetting { Key = "seo.description", Value = "Buy, sell and discover local listings near you.", ValueType = "Text", IsPublic = true }
+        };
+        var existingSettingKeys = await db.AppSettings.Select(x => x.Key).ToListAsync(ct);
+        foreach (var seed in appSettingSeeds.Where(x => !existingSettingKeys.Contains(x.Key)))
+        {
+            db.AppSettings.Add(seed);
         }
 
         await db.SaveChangesAsync(ct);

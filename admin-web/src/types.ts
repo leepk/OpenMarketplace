@@ -12,6 +12,7 @@ export type AdminTab =
   | 'payments'
   | 'reports'
   | 'settings'
+  | 'siteSettings'
   | 'health';
 
 export type Theme = 'light' | 'dark';
