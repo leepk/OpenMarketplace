@@ -26,7 +26,11 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         ["contact.address"] = "String",
         ["footer.text"] = "String",
         ["seo.title"] = "String",
-        ["seo.description"] = "Text"
+        ["seo.description"] = "Text",
+        ["moderation.ai_enabled"] = "Boolean",
+        ["moderation.auto_approve_safe"] = "Boolean",
+        ["moderation.review_threshold"] = "String",
+        ["moderation.reject_threshold"] = "String"
     };
 
     [HttpGet("api/v1/site-settings")]
@@ -49,7 +53,7 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
     {
         await EnsureDefaultsAsync(ct);
         var rows = await db.AppSettings.AsNoTracking()
-            .Where(x => !x.IsDeleted && (x.Key.StartsWith("site.") || x.Key.StartsWith("social.") || x.Key.StartsWith("contact.") || x.Key.StartsWith("footer.") || x.Key.StartsWith("seo.")))
+            .Where(x => !x.IsDeleted && (x.Key.StartsWith("site.") || x.Key.StartsWith("social.") || x.Key.StartsWith("contact.") || x.Key.StartsWith("footer.") || x.Key.StartsWith("seo.") || x.Key.StartsWith("moderation.")))
             .OrderBy(x => x.Key)
             .Select(x => new { x.Id, x.Key, x.Value, x.ValueType, x.IsPublic, x.CreatedAt, x.UpdatedAt })
             .ToListAsync(ct);
@@ -70,12 +74,12 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
             var setting = await db.AppSettings.FirstOrDefaultAsync(x => x.Key == key, ct);
             if (setting is null)
             {
-                setting = new AppSetting { Key = key, ValueType = DefaultTypes.GetValueOrDefault(key, "String"), IsPublic = true };
+                setting = new AppSetting { Key = key, ValueType = DefaultTypes.GetValueOrDefault(key, "String"), IsPublic = !key.StartsWith("moderation.") };
                 db.AppSettings.Add(setting);
             }
             setting.Value = item.Value?.Trim() ?? string.Empty;
             setting.ValueType = DefaultTypes.GetValueOrDefault(key, setting.ValueType);
-            setting.IsPublic = true;
+            setting.IsPublic = !key.StartsWith("moderation.");
             setting.UpdatedAt = DateTimeOffset.UtcNow;
         }
         db.AuditLogs.Add(new AuditLog { ActorId = request.AdminId, Action = "Site settings updated", EntityType = "SiteSettings", EntityId = Guid.Empty });
@@ -92,12 +96,12 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         var setting = await db.AppSettings.FirstOrDefaultAsync(x => x.Key == key, ct);
         if (setting is null)
         {
-            setting = new AppSetting { Key = key, ValueType = DefaultTypes.GetValueOrDefault(key, "String"), IsPublic = true };
+            setting = new AppSetting { Key = key, ValueType = DefaultTypes.GetValueOrDefault(key, "String"), IsPublic = !key.StartsWith("moderation.") };
             db.AppSettings.Add(setting);
         }
         setting.Value = request.Value?.Trim() ?? string.Empty;
         setting.ValueType = DefaultTypes.GetValueOrDefault(key, setting.ValueType);
-        setting.IsPublic = true;
+        setting.IsPublic = !key.StartsWith("moderation.");
         setting.UpdatedAt = DateTimeOffset.UtcNow;
         db.AuditLogs.Add(new AuditLog { ActorId = request.AdminId, Action = $"Site setting updated: {key}", EntityType = "SiteSettings", EntityId = setting.Id });
         await db.SaveChangesAsync(ct);
@@ -111,7 +115,7 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         var existing = await db.AppSettings.Where(x => keys.Contains(x.Key)).Select(x => x.Key).ToListAsync(ct);
         foreach (var row in defaults.Where(x => !existing.Contains(x.Key)))
         {
-            db.AppSettings.Add(new AppSetting { Key = row.Key, Value = row.Value, ValueType = row.ValueType, IsPublic = true });
+            db.AppSettings.Add(new AppSetting { Key = row.Key, Value = row.Value, ValueType = row.ValueType, IsPublic = !row.Key.StartsWith("moderation.") });
         }
         if (db.ChangeTracker.HasChanges()) await db.SaveChangesAsync(ct);
     }
@@ -131,7 +135,11 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         ("contact.address", "Santa Clara, CA", "String"),
         ("footer.text", "© OpenMarketplace. All rights reserved.", "String"),
         ("seo.title", "OpenMarketplace - Local Classifieds", "String"),
-        ("seo.description", "Buy, sell and discover local listings near you.", "Text")
+        ("seo.description", "Buy, sell and discover local listings near you.", "Text"),
+        ("moderation.ai_enabled", "true", "Boolean"),
+        ("moderation.auto_approve_safe", "true", "Boolean"),
+        ("moderation.review_threshold", "0.45", "String"),
+        ("moderation.reject_threshold", "0.85", "String")
     ];
 
     private static string NormalizeKey(string key) => (key ?? string.Empty).Trim().ToLowerInvariant().Replace('-', '_');

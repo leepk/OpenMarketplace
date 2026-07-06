@@ -40,6 +40,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<Promotion> Promotions => Set<Promotion>();
     public DbSet<PaymentProvider> PaymentProviders => Set<PaymentProvider>();
+    public DbSet<BlockedWord> BlockedWords => Set<BlockedWord>();
+    public DbSet<ListingModerationResult> ListingModerationResults => Set<ListingModerationResult>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -68,5 +70,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         builder.Entity<Invoice>(e=>{e.ToTable("invoices");e.HasKey(x=>x.Id);e.HasIndex(x=>x.InvoiceNumber).IsUnique();});
         builder.Entity<Promotion>(e=>{e.ToTable("promotions");e.HasKey(x=>x.Id);e.HasIndex(x=>new{x.ListingId,x.Status});});
         builder.Entity<PaymentProvider>(e=>{e.ToTable("payment_providers");e.HasKey(x=>x.Id);e.HasIndex(x=>x.Code).IsUnique();});
+        builder.Entity<BlockedWord>(e=>{e.ToTable("blocked_words");e.HasKey(x=>x.Id);e.HasIndex(x=>new{x.IsActive,x.NormalizedWord});});
+        builder.Entity<ListingModerationResult>(e=>{e.ToTable("listing_moderation_results");e.HasKey(x=>x.Id);e.HasIndex(x=>x.ListingId);e.HasIndex(x=>new{x.ListingId,x.TargetType,x.CreatedAt});});
     }
 }

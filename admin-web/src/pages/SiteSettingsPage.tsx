@@ -38,6 +38,17 @@ const fieldGroups: Array<{ title: string; description: string; fields: Array<{ k
       { key: 'footer.text', label: 'Footer Text', placeholder: '© OpenMarketplace. All rights reserved.' },
     ],
   },
+
+  {
+    title: 'Moderation',
+    description: 'OpenAI moderation and review thresholds for listing text and images.',
+    fields: [
+      { key: 'moderation.ai_enabled', label: 'Enable AI Moderation', placeholder: 'true' },
+      { key: 'moderation.auto_approve_safe', label: 'Auto Approve Safe Listings', placeholder: 'true' },
+      { key: 'moderation.review_threshold', label: 'Review Threshold', placeholder: '0.45' },
+      { key: 'moderation.reject_threshold', label: 'Reject Threshold', placeholder: '0.85' },
+    ],
+  },
   {
     title: 'SEO',
     description: 'Default title and description for customer pages.',

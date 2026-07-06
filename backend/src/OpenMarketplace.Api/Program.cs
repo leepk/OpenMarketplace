@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.OpenApi.Models;
 using OpenMarketplace.Api.Extensions;
 using OpenMarketplace.Api.Middleware;
+using OpenMarketplace.Api.Services;
 using OpenMarketplace.Application;
 using OpenMarketplace.Infrastructure;
 using Serilog;
@@ -80,6 +81,8 @@ try
         });
     builder.Services.AddAuthorization();
 
+    builder.Services.AddHttpClient("openai-moderation", c => c.Timeout = TimeSpan.FromSeconds(30));
+    builder.Services.AddScoped<IContentModerationService, ContentModerationService>();
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>

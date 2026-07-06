@@ -85,6 +85,7 @@ const icons: Record<string, LucideIcon> = {
   globe: Globe,
   system: RefreshCw,
   health: ShieldCheck,
+  shield: ShieldCheck,
   audit: History,
   history: History,
   search: Search,

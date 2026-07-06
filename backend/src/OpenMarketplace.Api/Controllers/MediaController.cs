@@ -3,12 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 using OpenMarketplace.Domain.Media;
 using OpenMarketplace.Infrastructure.Persistence;
+using OpenMarketplace.Api.Services;
 using OpenMarketplace.Shared.Api;
 
 namespace OpenMarketplace.Api.Controllers;
 [ApiController]
 [Route("api/v1/media")]
-public sealed class MediaController(AppDbContext db, IWebHostEnvironment env) : ControllerBase
+public sealed class MediaController(AppDbContext db, IWebHostEnvironment env, IContentModerationService moderation) : ControllerBase
 {
     public sealed class UploadMediaForm
     {
@@ -45,14 +46,44 @@ public sealed class MediaController(AppDbContext db, IWebHostEnvironment env) : 
         var safeFileName = Regex.Replace(originalName, @"[^a-zA-Z0-9._-]", "-");
         if (string.IsNullOrWhiteSpace(safeFileName)) safeFileName = $"listing-{id}.jpg";
 
+        byte[] bytes;
+        await using (var ms = new MemoryStream())
+        {
+            await file.CopyToAsync(ms, ct);
+            bytes = ms.ToArray();
+        }
+
+        var moderationResult = await moderation.CheckImageAsync(bytes, file.ContentType, ct);
+        if (!moderationResult.IsSafe)
+        {
+            if (form.ListingId.HasValue)
+            {
+                var listing = await db.Listings.FirstOrDefaultAsync(x => x.Id == form.ListingId.Value && !x.IsDeleted, ct);
+                if (listing is not null)
+                {
+                    listing.ModerationStatus = moderationResult.Status;
+                    listing.ModerationReason = moderationResult.Reason;
+                    listing.Status = moderationResult.IsRejected ? "Rejected" : "Pending";
+                    db.ListingModerationResults.Add(new OpenMarketplace.Domain.Moderation.ListingModerationResult
+                    {
+                        ListingId = listing.Id,
+                        TargetType = "Image",
+                        Status = moderationResult.Status,
+                        Reason = moderationResult.Reason,
+                        Categories = moderationResult.Categories,
+                        MaxScore = moderationResult.MaxScore,
+                        RawResponse = moderationResult.RawResponse
+                    });
+                    await db.SaveChangesAsync(ct);
+                }
+            }
+            return BadRequest(ApiResponse<MediaAsset>.Fail("ModerationRejected", moderationResult.Reason, HttpContext.TraceIdentifier));
+        }
+
         var mediaRoot = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "media", id.ToString());
         Directory.CreateDirectory(mediaRoot);
         var physicalPath = Path.Combine(mediaRoot, safeFileName);
-
-        await using (var stream = System.IO.File.Create(physicalPath))
-        {
-            await file.CopyToAsync(stream, ct);
-        }
+        await System.IO.File.WriteAllBytesAsync(physicalPath, bytes, ct);
 
         var asset = new MediaAsset
         {
@@ -67,6 +98,19 @@ public sealed class MediaController(AppDbContext db, IWebHostEnvironment env) : 
         };
 
         db.MediaAssets.Add(asset);
+        if (form.ListingId.HasValue)
+        {
+            db.ListingModerationResults.Add(new OpenMarketplace.Domain.Moderation.ListingModerationResult
+            {
+                ListingId = form.ListingId.Value,
+                TargetType = "Image",
+                Status = moderationResult.Status,
+                Reason = moderationResult.Reason,
+                Categories = moderationResult.Categories,
+                MaxScore = moderationResult.MaxScore,
+                RawResponse = moderationResult.RawResponse
+            });
+        }
         await db.SaveChangesAsync(ct);
         return Ok(ApiResponse<MediaAsset>.Ok(asset, HttpContext.TraceIdentifier));
     }

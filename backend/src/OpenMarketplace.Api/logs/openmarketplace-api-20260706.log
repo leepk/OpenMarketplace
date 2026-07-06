@@ -1,0 +1,460 @@
+2026-07-06 11:51:02.350 -07:00 [INF] Starting OpenMarketplace API
+2026-07-06 11:51:03.043 -07:00 [INF] OpenMarketplace API listening. Swagger: http://localhost:5001/swagger/index.html
+2026-07-06 11:51:03.499 -07:00 [INF] Auto database migration/seed attempt 1/10
+2026-07-06 11:51:03.631 -07:00 [INF] Database initialization started
+2026-07-06 11:51:04.699 -07:00 [INF] HTTP GET /swagger/index.html responded 200 in 512.8234 ms
+2026-07-06 11:51:04.809 -07:00 [INF] HTTP GET /swagger/index.js responded 200 in 3.4162 ms
+2026-07-06 11:51:05.152 -07:00 [INF] HTTP GET /swagger/v1/swagger.json responded 200 in 273.6271 ms
+2026-07-06 11:51:05.762 -07:00 [INF] Pending EF migrations: none
+2026-07-06 11:51:05.762 -07:00 [INF] Applying EF Core migrations automatically...
+2026-07-06 11:51:06.140 -07:00 [INF] Ensuring message/chat schema repair...
+2026-07-06 11:51:06.164 -07:00 [INF] Ensuring listing location schema repair...
+2026-07-06 11:51:06.168 -07:00 [INF] Ensuring notification schema repair...
+2026-07-06 11:51:06.179 -07:00 [INF] Ensuring user role/source schema repair...
+2026-07-06 11:51:06.187 -07:00 [INF] Ensuring package sort order schema repair...
+2026-07-06 11:51:06.206 -07:00 [INF] Seeding database automatically...
+2026-07-06 11:51:07.649 -07:00 [INF] Seed completed with sample marketplace data
+2026-07-06 11:51:07.650 -07:00 [INF] Database initialization completed
+2026-07-06 11:53:52.537 -07:00 [INF] HTTP OPTIONS /api/v1/admin/site-settings responded 204 in 17.4334 ms
+2026-07-06 11:53:52.537 -07:00 [INF] HTTP OPTIONS /api/v1/admin/site-settings responded 204 in 19.1974 ms
+2026-07-06 11:53:52.885 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 336.3618 ms
+2026-07-06 11:53:52.898 -07:00 [INF] HTTP GET /site/logo-openmarketplace.svg responded 304 in 6.7336 ms
+2026-07-06 11:53:52.898 -07:00 [INF] HTTP GET /site/favicon-openmarketplace.svg responded 304 in 6.3028 ms
+2026-07-06 11:53:52.967 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 85.4253 ms
+2026-07-06 11:53:55.531 -07:00 [INF] HTTP OPTIONS /api/v1/admin/blocked-words responded 204 in 0.2523 ms
+2026-07-06 11:53:55.531 -07:00 [INF] HTTP OPTIONS /api/v1/admin/blocked-words responded 204 in 0.2550 ms
+2026-07-06 11:53:55.594 -07:00 [ERR] Failed executing DbCommand (10ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT count(*)::int
+FROM blocked_words AS b
+WHERE NOT (b."IsDeleted")
+2026-07-06 11:53:55.615 -07:00 [ERR] An exception occurred while iterating over the results of a query for context type 'OpenMarketplace.Infrastructure.Persistence.AppDbContext'.
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+2026-07-06 11:53:55.620 -07:00 [ERR] Unhandled exception
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at OpenMarketplace.Api.Controllers.BlockedWordsController.Get(String q, String status, Int32 page, Int32 pageSize, CancellationToken ct) in /Users/phanle/Documents/OpenMarketplace/backend/src/OpenMarketplace.Api/Controllers/BlockedWordsController.cs:line 32
+   at lambda_method1766(Closure, Object)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.AwaitableObjectResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at OpenMarketplace.Api.Middleware.GlobalExceptionMiddleware.InvokeAsync(HttpContext context) in /Users/phanle/Documents/OpenMarketplace/backend/src/OpenMarketplace.Api/Middleware/GlobalExceptionMiddleware.cs:line 1
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+2026-07-06 11:53:55.633 -07:00 [ERR] HTTP GET /api/v1/admin/blocked-words responded 500 in 95.9833 ms
+2026-07-06 11:53:55.637 -07:00 [ERR] Failed executing DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT count(*)::int
+FROM blocked_words AS b
+WHERE NOT (b."IsDeleted")
+2026-07-06 11:53:55.638 -07:00 [ERR] An exception occurred while iterating over the results of a query for context type 'OpenMarketplace.Infrastructure.Persistence.AppDbContext'.
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+2026-07-06 11:53:55.641 -07:00 [ERR] Unhandled exception
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at OpenMarketplace.Api.Controllers.BlockedWordsController.Get(String q, String status, Int32 page, Int32 pageSize, CancellationToken ct) in /Users/phanle/Documents/OpenMarketplace/backend/src/OpenMarketplace.Api/Controllers/BlockedWordsController.cs:line 32
+   at lambda_method1766(Closure, Object)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.AwaitableObjectResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at OpenMarketplace.Api.Middleware.GlobalExceptionMiddleware.InvokeAsync(HttpContext context) in /Users/phanle/Documents/OpenMarketplace/backend/src/OpenMarketplace.Api/Middleware/GlobalExceptionMiddleware.cs:line 1
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+2026-07-06 11:53:55.647 -07:00 [ERR] HTTP GET /api/v1/admin/blocked-words responded 500 in 12.9380 ms
+2026-07-06 11:54:01.432 -07:00 [INF] HTTP OPTIONS /api/v1/admin/site-settings responded 204 in 0.8055 ms
+2026-07-06 11:54:01.432 -07:00 [INF] HTTP OPTIONS /api/v1/admin/site-settings responded 204 in 0.6065 ms
+2026-07-06 11:54:01.442 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 5.1265 ms
+2026-07-06 11:54:01.446 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 3.1660 ms
+2026-07-06 11:54:02.377 -07:00 [INF] HTTP OPTIONS /api/v1/admin/blocked-words responded 204 in 0.1920 ms
+2026-07-06 11:54:02.377 -07:00 [INF] HTTP OPTIONS /api/v1/admin/blocked-words responded 204 in 0.1919 ms
+2026-07-06 11:54:02.382 -07:00 [ERR] Failed executing DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT count(*)::int
+FROM blocked_words AS b
+WHERE NOT (b."IsDeleted")
+2026-07-06 11:54:02.385 -07:00 [ERR] An exception occurred while iterating over the results of a query for context type 'OpenMarketplace.Infrastructure.Persistence.AppDbContext'.
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+2026-07-06 11:54:02.388 -07:00 [ERR] Unhandled exception
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at OpenMarketplace.Api.Controllers.BlockedWordsController.Get(String q, String status, Int32 page, Int32 pageSize, CancellationToken ct) in /Users/phanle/Documents/OpenMarketplace/backend/src/OpenMarketplace.Api/Controllers/BlockedWordsController.cs:line 32
+   at lambda_method1766(Closure, Object)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.AwaitableObjectResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at OpenMarketplace.Api.Middleware.GlobalExceptionMiddleware.InvokeAsync(HttpContext context) in /Users/phanle/Documents/OpenMarketplace/backend/src/OpenMarketplace.Api/Middleware/GlobalExceptionMiddleware.cs:line 1
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+2026-07-06 11:54:02.393 -07:00 [ERR] HTTP GET /api/v1/admin/blocked-words responded 500 in 14.6997 ms
+2026-07-06 11:54:02.397 -07:00 [ERR] Failed executing DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT count(*)::int
+FROM blocked_words AS b
+WHERE NOT (b."IsDeleted")
+2026-07-06 11:54:02.398 -07:00 [ERR] An exception occurred while iterating over the results of a query for context type 'OpenMarketplace.Infrastructure.Persistence.AppDbContext'.
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+2026-07-06 11:54:02.401 -07:00 [ERR] Unhandled exception
+Npgsql.PostgresException (0x80004005): 42P01: relation "blocked_words" does not exist
+
+POSITION: 27
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at OpenMarketplace.Api.Controllers.BlockedWordsController.Get(String q, String status, Int32 page, Int32 pageSize, CancellationToken ct) in /Users/phanle/Documents/OpenMarketplace/backend/src/OpenMarketplace.Api/Controllers/BlockedWordsController.cs:line 32
+   at lambda_method1766(Closure, Object)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.AwaitableObjectResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at OpenMarketplace.Api.Middleware.GlobalExceptionMiddleware.InvokeAsync(HttpContext context) in /Users/phanle/Documents/OpenMarketplace/backend/src/OpenMarketplace.Api/Middleware/GlobalExceptionMiddleware.cs:line 1
+  Exception data:
+    Severity: ERROR
+    SqlState: 42P01
+    MessageText: relation "blocked_words" does not exist
+    Position: 27
+    File: parse_relation.c
+    Line: 1452
+    Routine: parserOpenTable
+2026-07-06 11:54:02.405 -07:00 [ERR] HTTP GET /api/v1/admin/blocked-words responded 500 in 10.8713 ms
+2026-07-06 11:54:03.737 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 12.0910 ms
+2026-07-06 11:54:03.741 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 3.5745 ms
+2026-07-06 11:54:10.694 -07:00 [INF] HTTP OPTIONS /api/v1/admin/site-settings responded 204 in 0.4320 ms
+2026-07-06 11:54:10.802 -07:00 [INF] HTTP POST /api/v1/admin/site-settings responded 200 in 104.7912 ms
+2026-07-06 11:54:10.807 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 3.7382 ms
+2026-07-06 11:54:16.804 -07:00 [INF] HTTP GET /avatars/avatar-6.svg responded 304 in 14.3927 ms
+2026-07-06 11:54:16.827 -07:00 [INF] HTTP OPTIONS /api/v1/favorites responded 204 in 1.9084 ms
+2026-07-06 11:54:16.828 -07:00 [INF] HTTP OPTIONS /api/v1/messages responded 204 in 0.0728 ms
+2026-07-06 11:54:16.831 -07:00 [INF] HTTP OPTIONS /api/v1/notifications responded 204 in 0.1871 ms
+2026-07-06 11:54:16.836 -07:00 [INF] HTTP OPTIONS /api/v1/notifications responded 204 in 0.0513 ms
+2026-07-06 11:54:16.973 -07:00 [INF] HTTP GET /api/v1/site-settings responded 200 in 220.0450 ms
+2026-07-06 11:54:17.057 -07:00 [INF] HTTP GET /api/v1/notifications responded 200 in 161.0822 ms
+2026-07-06 11:54:17.063 -07:00 [INF] HTTP GET /api/v1/notifications responded 200 in 207.9978 ms
+2026-07-06 11:54:17.113 -07:00 [INF] HTTP GET /api/v1/favorites responded 200 in 280.6047 ms
+2026-07-06 11:54:17.186 -07:00 [INF] HTTP GET /api/v1/messages responded 200 in 345.5329 ms
+2026-07-06 11:54:20.268 -07:00 [INF] HTTP GET /api/v1/feed/home responded 200 in 91.8780 ms
+2026-07-06 11:54:20.440 -07:00 [INF] HTTP GET /media/019f2b96-6991-7ed6-bf3e-ffec5aa3210c/ChatGPT-Image-Jul-3--2026--12_31_46-PM.png responded 404 in 0.8977 ms
+2026-07-06 11:54:20.496 -07:00 [INF] HTTP GET /media/019f2b96-6991-7ed6-bf3e-ffec5aa3210c/ChatGPT-Image-Jul-3--2026--12_31_46-PM.png responded 404 in 0.2906 ms
+2026-07-06 11:54:20.651 -07:00 [INF] HTTP GET /media/019f2b96-6991-7ed6-bf3e-ffec5aa3210c/ChatGPT-Image-Jul-3--2026--12_31_46-PM.png responded 404 in 0.2333 ms
+2026-07-06 11:54:20.689 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 0.1163 ms
+2026-07-06 11:54:20.689 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 0.0129 ms
+2026-07-06 11:54:20.689 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 0.0108 ms
+2026-07-06 11:54:20.702 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 0.2530 ms
+2026-07-06 11:54:20.694 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 1.5069 ms
+2026-07-06 11:54:20.702 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 0.1372 ms
+2026-07-06 11:54:20.725 -07:00 [INF] HTTP OPTIONS /api/v1/favorites responded 204 in 0.0517 ms
+2026-07-06 11:54:20.731 -07:00 [INF] HTTP OPTIONS /api/v1/messages responded 204 in 0.0414 ms
+2026-07-06 11:54:20.731 -07:00 [INF] HTTP OPTIONS /api/v1/notifications responded 204 in 0.0124 ms
+2026-07-06 11:54:20.814 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 82.2240 ms
+2026-07-06 11:54:20.817 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 87.4477 ms
+2026-07-06 11:54:20.828 -07:00 [INF] HTTP GET /api/v1/favorites responded 200 in 8.9873 ms
+2026-07-06 11:54:20.882 -07:00 [INF] HTTP GET /api/v1/messages responded 200 in 63.7098 ms
+2026-07-06 11:54:20.912 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 177.8693 ms
+2026-07-06 11:54:20.913 -07:00 [INF] HTTP GET /api/v1/notifications responded 200 in 77.6930 ms
+2026-07-06 11:54:20.913 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f310d-cbcb-7169-8411-ca658567e88b/impression responded 204 in 0.0370 ms
+2026-07-06 11:54:20.918 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 182.7369 ms
+2026-07-06 11:54:20.925 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 194.2006 ms
+2026-07-06 11:54:20.924 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 193.9243 ms
+2026-07-06 11:54:20.946 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f310d-cbc6-7530-b1a6-7399d097ac3c/impression responded 204 in 2.6030 ms
+2026-07-06 11:54:20.996 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f310d-cbcd-7898-b0ac-8affbee57ce5/impression responded 204 in 0.0876 ms
+2026-07-06 11:54:21.090 -07:00 [INF] HTTP POST /api/v1/ads/019f310d-cbcd-7898-b0ac-8affbee57ce5/impression responded 200 in 87.3966 ms
+2026-07-06 11:54:21.091 -07:00 [INF] HTTP POST /api/v1/ads/019f310d-cbcb-7169-8411-ca658567e88b/impression responded 200 in 167.0738 ms
+2026-07-06 11:54:21.091 -07:00 [INF] HTTP POST /api/v1/ads/019f310d-cbc6-7530-b1a6-7399d097ac3c/impression responded 200 in 122.8234 ms
+2026-07-06 11:54:25.042 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f310d-cbcc-7886-87c8-18cdbb95dbda/impression responded 204 in 0.3702 ms
+2026-07-06 11:54:25.073 -07:00 [INF] HTTP POST /api/v1/ads/019f310d-cbcc-7886-87c8-18cdbb95dbda/impression responded 200 in 28.0402 ms
+2026-07-06 11:54:25.194 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f3531-56fa-7e62-91b6-7cc807974aad/impression responded 204 in 0.1270 ms
+2026-07-06 11:54:25.216 -07:00 [INF] HTTP POST /api/v1/ads/019f3531-56fa-7e62-91b6-7cc807974aad/impression responded 200 in 20.3613 ms
+2026-07-06 11:54:25.545 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f310d-cbca-7f7b-a9a5-628feef02ced/impression responded 204 in 0.0377 ms
+2026-07-06 11:54:25.550 -07:00 [INF] HTTP POST /api/v1/ads/019f310d-cbca-7f7b-a9a5-628feef02ced/impression responded 200 in 3.9419 ms
+2026-07-06 11:54:29.245 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f310d-cbcb-7169-8411-ca658567e88b/impression responded 204 in 0.4182 ms
+2026-07-06 11:54:29.270 -07:00 [INF] HTTP POST /api/v1/ads/019f310d-cbcb-7169-8411-ca658567e88b/impression responded 200 in 22.9353 ms
+2026-07-06 11:54:29.394 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f310d-cbcd-7898-b0ac-8affbee57ce5/impression responded 204 in 0.0685 ms
+2026-07-06 11:54:29.403 -07:00 [INF] HTTP POST /api/v1/ads/019f310d-cbcd-7898-b0ac-8affbee57ce5/impression responded 200 in 7.5174 ms
+2026-07-06 11:54:29.751 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f310d-cbc6-7530-b1a6-7399d097ac3c/impression responded 204 in 1.0379 ms
+2026-07-06 11:54:29.763 -07:00 [INF] HTTP POST /api/v1/ads/019f310d-cbc6-7530-b1a6-7399d097ac3c/impression responded 200 in 9.3261 ms
+2026-07-06 11:58:45.162 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f310d-cbca-7f7b-a9a5-628feef02ced/impression responded 204 in 2.0536 ms
+2026-07-06 11:58:45.163 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f310d-cbcc-7886-87c8-18cdbb95dbda/impression responded 204 in 0.1526 ms
+2026-07-06 11:58:45.163 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f3531-56fa-7e62-91b6-7cc807974aad/impression responded 204 in 0.0174 ms
+2026-07-06 11:58:45.231 -07:00 [INF] HTTP POST /api/v1/ads/019f3531-56fa-7e62-91b6-7cc807974aad/impression responded 200 in 60.5201 ms
+2026-07-06 11:58:45.237 -07:00 [INF] HTTP POST /api/v1/ads/019f310d-cbca-7f7b-a9a5-628feef02ced/impression responded 200 in 66.0739 ms
+2026-07-06 11:58:45.239 -07:00 [INF] HTTP POST /api/v1/ads/019f310d-cbcc-7886-87c8-18cdbb95dbda/impression responded 200 in 68.9513 ms

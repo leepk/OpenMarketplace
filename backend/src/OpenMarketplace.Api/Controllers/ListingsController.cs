@@ -5,13 +5,14 @@ using OpenMarketplace.Domain.Engagement;
 using OpenMarketplace.Domain.Listings;
 using OpenMarketplace.Domain.Moderation;
 using OpenMarketplace.Infrastructure.Persistence;
+using OpenMarketplace.Api.Services;
 using OpenMarketplace.Shared.Api;
 
 namespace OpenMarketplace.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/listings")]
-public sealed class ListingsController(AppDbContext db) : ControllerBase
+public sealed class ListingsController(AppDbContext db, IContentModerationService moderation) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<ApiResponse<object>>> Get([FromQuery] string? q, [FromQuery] Guid? categoryId, [FromQuery] string? category, [FromQuery] string? status, [FromQuery] Guid? sellerId, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken ct = default)
@@ -184,7 +185,10 @@ public sealed class ListingsController(AppDbContext db) : ControllerBase
             IsPinned = packageStatus == "Active" && string.Equals(normalizedPackageCode, "PREMIUM", StringComparison.OrdinalIgnoreCase),
             ExpiresAt = now.AddDays(package?.DurationDays ?? 30)
         };
+        var moderationResult = await moderation.CheckTextAsync(listing.Title, listing.Description, ct);
+        ApplyModeration(listing, moderationResult, packageStatus);
         db.Listings.Add(listing);
+        db.ListingModerationResults.Add(ToModerationEntity(listing.Id, "Text", moderationResult));
         db.Notifications.Add(new Notification
         {
             UserId = listing.SellerId,
@@ -221,7 +225,10 @@ public sealed class ListingsController(AppDbContext db) : ControllerBase
         listing.LocationPrecision = NormalizeLocationPrecision(request.LocationPrecision, request.HideExactLocation);
         listing.HideExactLocation = request.HideExactLocation ?? listing.HideExactLocation;
         listing.CategoryId = request.CategoryId;
+        var moderationResult = await moderation.CheckTextAsync(listing.Title, listing.Description, ct);
+        ApplyModeration(listing, moderationResult, listing.PackageStatus);
         listing.UpdatedAt = DateTimeOffset.UtcNow;
+        db.ListingModerationResults.Add(ToModerationEntity(listing.Id, "Text", moderationResult));
         await db.SaveChangesAsync(ct);
         return Ok(ApiResponse<Listing>.Ok(listing, HttpContext.TraceIdentifier));
     }
@@ -355,6 +362,36 @@ public sealed class ListingsController(AppDbContext db) : ControllerBase
         await db.SaveChangesAsync(ct);
         return Ok(ApiResponse<object>.Ok(new { conversation, message }, HttpContext.TraceIdentifier));
     }
+
+    private static void ApplyModeration(Listing listing, ModerationCheckResult result, string packageStatus)
+    {
+        listing.ModerationStatus = result.Status;
+        listing.ModerationReason = result.IsSafe ? string.Empty : result.Reason;
+        if (result.IsRejected)
+        {
+            listing.Status = "Rejected";
+            return;
+        }
+
+        if (result.NeedsReview)
+        {
+            listing.Status = "Pending";
+            return;
+        }
+
+        listing.Status = packageStatus == "Active" ? "Published" : "Pending";
+    }
+
+    private static ListingModerationResult ToModerationEntity(Guid listingId, string targetType, ModerationCheckResult result) => new()
+    {
+        ListingId = listingId,
+        TargetType = targetType,
+        Status = result.Status,
+        Reason = result.Reason,
+        Categories = result.Categories,
+        MaxScore = result.MaxScore,
+        RawResponse = result.RawResponse
+    };
 
     private static string BuildDisplayLocation(CreateListingRequest request)
     {

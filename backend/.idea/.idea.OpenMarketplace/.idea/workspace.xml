@@ -10,8 +10,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="19bb964e-0244-49ac-a987-4809ad096fe8" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../admin-web/src/components/common/Icon.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../admin-web/src/components/common/Icon.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../admin-web/src/components/layout/AdminShell.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../admin-web/src/components/layout/AdminShell.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../admin-web/src/components/layout/navItems.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../admin-web/src/components/layout/navItems.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../admin-web/src/lib/api/apiClient.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../admin-web/src/lib/api/apiClient.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../admin-web/src/pages/SiteSettingsPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../admin-web/src/pages/SiteSettingsPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../admin-web/src/routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../admin-web/src/routes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../admin-web/src/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../admin-web/src/types.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../admin-web/yarn.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.OpenMarketplace/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Api/Controllers/ListingsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpenMarketplace.Api/Controllers/ListingsController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Api/Controllers/MediaController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpenMarketplace.Api/Controllers/MediaController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Api/Controllers/SiteSettingsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpenMarketplace.Api/Controllers/SiteSettingsController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Api/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpenMarketplace.Api/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Api/appsettings.Development.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpenMarketplace.Api/appsettings.Development.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Api/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpenMarketplace.Api/appsettings.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Api/logs/openmarketplace-api-20260705.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Domain/Moderation/ModerationModels.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpenMarketplace.Domain/Moderation/ModerationModels.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Infrastructure/Persistence/AppDbContext.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpenMarketplace.Infrastructure/Persistence/AppDbContext.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -231,7 +247,7 @@
       <workItem from="1783183934985" duration="52000" />
       <workItem from="1783201732147" duration="9770000" />
       <workItem from="1783304278233" duration="496000" />
-      <workItem from="1783304785775" duration="1803000" />
+      <workItem from="1783304785775" duration="2550000" />
     </task>
     <servers />
   </component>

@@ -13,6 +13,7 @@ export type AdminTab =
   | 'reports'
   | 'settings'
   | 'siteSettings'
+  | 'blockedWords'
   | 'health';
 
 export type Theme = 'light' | 'dark';
