@@ -1,0 +1,34 @@
+2026-07-05 19:53:07.081 -07:00 [INF] Starting OpenMarketplace API
+2026-07-05 19:53:07.703 -07:00 [INF] OpenMarketplace API listening. Swagger: http://localhost:5001/swagger/index.html
+2026-07-05 19:53:07.764 -07:00 [INF] Auto database migration/seed attempt 1/10
+2026-07-05 19:53:07.883 -07:00 [INF] Database initialization started
+2026-07-05 19:53:09.518 -07:00 [INF] HTTP GET /swagger/index.html responded 200 in 277.5731 ms
+2026-07-05 19:53:09.605 -07:00 [INF] HTTP GET /swagger/index.js responded 200 in 6.2755 ms
+2026-07-05 19:53:10.124 -07:00 [INF] HTTP GET /swagger/v1/swagger.json responded 200 in 401.8928 ms
+2026-07-05 19:53:10.768 -07:00 [INF] Pending EF migrations: none
+2026-07-05 19:53:10.768 -07:00 [INF] Applying EF Core migrations automatically...
+2026-07-05 19:53:11.293 -07:00 [INF] Ensuring message/chat schema repair...
+2026-07-05 19:53:11.303 -07:00 [INF] Ensuring listing location schema repair...
+2026-07-05 19:53:11.306 -07:00 [INF] Ensuring notification schema repair...
+2026-07-05 19:53:11.313 -07:00 [INF] Ensuring user role/source schema repair...
+2026-07-05 19:53:11.327 -07:00 [INF] Ensuring package sort order schema repair...
+2026-07-05 19:53:11.363 -07:00 [INF] Seeding database automatically...
+2026-07-05 19:53:12.937 -07:00 [INF] Seed completed with sample marketplace data
+2026-07-05 19:53:12.944 -07:00 [INF] Database initialization completed
+2026-07-05 19:53:13.206 -07:00 [INF] HTTP OPTIONS /api/v1/admin/packages responded 204 in 3.0788 ms
+2026-07-05 19:53:13.208 -07:00 [INF] HTTP OPTIONS /api/v1/admin/packages responded 204 in 5.1583 ms
+2026-07-05 19:53:13.565 -07:00 [INF] HTTP GET /api/v1/admin/packages responded 200 in 333.8078 ms
+2026-07-05 19:53:13.641 -07:00 [INF] HTTP GET /api/v1/admin/packages responded 200 in 69.7431 ms
+2026-07-05 19:53:21.047 -07:00 [INF] HTTP OPTIONS /api/v1/packages responded 204 in 2.3685 ms
+2026-07-05 19:53:21.047 -07:00 [INF] HTTP OPTIONS /api/v1/categories responded 204 in 1.8391 ms
+2026-07-05 19:53:21.059 -07:00 [INF] HTTP OPTIONS /api/v1/favorites responded 204 in 0.5935 ms
+2026-07-05 19:53:21.060 -07:00 [INF] HTTP OPTIONS /api/v1/billing/providers responded 204 in 1.2927 ms
+2026-07-05 19:53:21.068 -07:00 [INF] HTTP OPTIONS /api/v1/messages responded 204 in 0.0720 ms
+2026-07-05 19:53:21.084 -07:00 [INF] HTTP OPTIONS /api/v1/notifications responded 204 in 0.0855 ms
+2026-07-05 19:53:21.091 -07:00 [INF] HTTP GET /avatars/avatar-6.svg responded 304 in 32.3365 ms
+2026-07-05 19:53:21.202 -07:00 [INF] HTTP GET /api/v1/billing/providers responded 200 in 109.7286 ms
+2026-07-05 19:53:21.397 -07:00 [INF] HTTP GET /api/v1/categories responded 200 in 293.5421 ms
+2026-07-05 19:53:21.402 -07:00 [INF] HTTP GET /api/v1/favorites responded 200 in 295.4986 ms
+2026-07-05 19:53:21.409 -07:00 [INF] HTTP GET /api/v1/packages responded 200 in 329.4858 ms
+2026-07-05 19:53:21.430 -07:00 [INF] HTTP GET /api/v1/notifications responded 200 in 279.7808 ms
+2026-07-05 19:53:21.508 -07:00 [INF] HTTP GET /api/v1/messages responded 200 in 359.4738 ms

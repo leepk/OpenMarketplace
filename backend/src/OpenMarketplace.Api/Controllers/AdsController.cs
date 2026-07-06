@@ -25,6 +25,7 @@ public sealed class AdsController(AppDbContext db) : ControllerBase
                 && x.creative.Status == "Active"
                 && x.campaign.Status == "Active"
                 && x.creative.Placement == normalizedPlacement
+                && db.AdPlacements.Any(p => p.Code == normalizedPlacement && p.IsActive && !p.IsDeleted)
                 && x.campaign.StartDate <= now
                 && x.campaign.EndDate >= now
                 && (x.creative.MaxImpressions <= 0 || x.creative.CurrentImpressions < x.creative.MaxImpressions)
@@ -40,6 +41,7 @@ public sealed class AdsController(AppDbContext db) : ControllerBase
                 x.creative.Placement,
                 x.creative.Title,
                 x.creative.Description,
+                ImageUrl = string.IsNullOrWhiteSpace(x.creative.DesktopImageUrl) ? x.creative.MobileImageUrl : x.creative.DesktopImageUrl,
                 x.creative.DesktopImageUrl,
                 x.creative.MobileImageUrl,
                 x.creative.TargetUrl,

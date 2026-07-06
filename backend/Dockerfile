@@ -6,6 +6,6 @@ RUN dotnet publish src/OpenMarketplace.Api/OpenMarketplace.Api.csproj -c Release
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 COPY --from=build /app/publish .
-ENV ASPNETCORE_URLS=http://+:5100
-EXPOSE 5100
+ENV ASPNETCORE_URLS=http://+:5001
+EXPOSE 5001
 ENTRYPOINT ["dotnet", "OpenMarketplace.Api.dll"]

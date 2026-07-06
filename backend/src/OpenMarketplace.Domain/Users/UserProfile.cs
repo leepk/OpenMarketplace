@@ -7,6 +7,7 @@ public sealed class UserProfile : OpenMarketplace.Domain.Common.Entity
     public string Location { get; set; } = "";
     public string AvatarUrl { get; set; } = "";
     public string Role { get; set; } = "Customer";
+    public string Source { get; set; } = "WebCustomer";
     public string PasswordHash { get; set; } = "";
     public bool EmailVerified { get; set; }
     public bool PhoneVerified { get; set; }

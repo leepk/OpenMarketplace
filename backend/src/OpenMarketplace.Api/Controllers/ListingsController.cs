@@ -18,17 +18,18 @@ public sealed class ListingsController(AppDbContext db) : ControllerBase
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
+        var now = DateTimeOffset.UtcNow;
 
         var query = db.Listings.AsNoTracking().Where(x => !x.IsDeleted);
         if (sellerId.HasValue) query = query.Where(x => x.SellerId == sellerId.Value);
         if (!string.IsNullOrWhiteSpace(status) && !string.Equals(status, "All", StringComparison.OrdinalIgnoreCase)) query = query.Where(x => x.Status == status || x.ModerationStatus == status);
-        else if (!sellerId.HasValue) query = query.Where(x => x.Status == "Published" || x.Status == "Pending");
+        else if (!sellerId.HasValue) query = query.Where(x => x.Status == "Published" && (!x.ExpiresAt.HasValue || x.ExpiresAt >= now));
 
         if (categoryId.HasValue) query = query.Where(x => x.CategoryId == categoryId.Value);
         if (!string.IsNullOrWhiteSpace(category))
         {
             var categoryText = category.Trim().ToLower();
-            query = query.Where(x => db.Categories.Any(c => c.Id == x.CategoryId && (c.Code.ToLower() == categoryText || c.Slug.ToLower() == categoryText || c.Name.ToLower() == categoryText)));
+            query = query.Where(x => db.Categories.Any(c => c.Id == x.CategoryId && c.IsActive && !c.IsDeleted && (c.Code.ToLower() == categoryText || c.Slug.ToLower() == categoryText || c.Name.ToLower() == categoryText)));
         }
         if (!string.IsNullOrWhiteSpace(q)) query = query.Where(x => x.Title.Contains(q) || x.Description.Contains(q) || x.Location.Contains(q));
 
@@ -84,7 +85,8 @@ public sealed class ListingsController(AppDbContext db) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ApiResponse<object>>> GetById(Guid id, CancellationToken ct)
     {
-        var listing = await db.Listings.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, ct);
+        var now = DateTimeOffset.UtcNow;
+        var listing = await db.Listings.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted && x.Status == "Published" && (!x.ExpiresAt.HasValue || x.ExpiresAt >= now), ct);
         if (listing is null) return NotFound(ApiResponse<object>.Fail("NotFound", "Listing not found", HttpContext.TraceIdentifier));
 
         listing.ViewCount++;
@@ -183,7 +185,16 @@ public sealed class ListingsController(AppDbContext db) : ControllerBase
             ExpiresAt = now.AddDays(package?.DurationDays ?? 30)
         };
         db.Listings.Add(listing);
-        db.Notifications.Add(new Notification{UserId=listing.SellerId,Type="Listing",Title="Listing submitted",Body=$"{listing.Title} is pending review.",Url=$"/my-listings"});
+        db.Notifications.Add(new Notification
+        {
+            UserId = listing.SellerId,
+            Type = "Listing",
+            Title = "Listing submitted",
+            Body = $"{listing.Title} is pending review.",
+            Url = "/my-listings",
+            EntityType = "Listing",
+            EntityId = listing.Id
+        });
         await db.SaveChangesAsync(ct);
         return Ok(ApiResponse<Listing>.Ok(listing, HttpContext.TraceIdentifier));
     }
@@ -219,8 +230,36 @@ public sealed class ListingsController(AppDbContext db) : ControllerBase
     public async Task<ActionResult<ApiResponse<object>>> Favorite(Guid id, [FromBody] UserActionRequest request, CancellationToken ct)
     {
         var userId = request.UserId == Guid.Empty ? DemoIds.Customer : request.UserId;
-        if (!await db.Favorites.AnyAsync(x => x.UserId == userId && x.ListingId == id, ct)) { db.Favorites.Add(new Favorite{UserId=userId,ListingId=id}); var listing = await db.Listings.FindAsync([id], ct); if (listing is not null) listing.FavoriteCount++; await db.SaveChangesAsync(ct); }
-        return Ok(ApiResponse<object>.Ok(new{saved=true}, HttpContext.TraceIdentifier));
+        if (!await db.Favorites.AnyAsync(x => x.UserId == userId && x.ListingId == id, ct))
+        {
+            db.Favorites.Add(new Favorite { UserId = userId, ListingId = id });
+            var listing = await db.Listings.FindAsync([id], ct);
+            if (listing is not null)
+            {
+                listing.FavoriteCount++;
+                if (listing.SellerId != userId)
+                {
+                    var imageUrl = await db.MediaAssets.AsNoTracking()
+                        .Where(x => x.ListingId == listing.Id)
+                        .OrderBy(x => x.CreatedAt)
+                        .Select(x => x.Url)
+                        .FirstOrDefaultAsync(ct) ?? "";
+                    db.Notifications.Add(new Notification
+                    {
+                        UserId = listing.SellerId,
+                        Type = "Listing",
+                        Title = "Listing saved",
+                        Body = $"Someone saved {listing.Title}.",
+                        Url = $"/listings/{listing.Id}",
+                        EntityType = "Listing",
+                        EntityId = listing.Id,
+                        ImageUrl = imageUrl
+                    });
+                }
+            }
+            await db.SaveChangesAsync(ct);
+        }
+        return Ok(ApiResponse<object>.Ok(new { saved = true }, HttpContext.TraceIdentifier));
     }
 
     [HttpPost("{id:guid}/like")]
@@ -234,8 +273,32 @@ public sealed class ListingsController(AppDbContext db) : ControllerBase
     [HttpPost("{id:guid}/comments")]
     public async Task<ActionResult<ApiResponse<ListingComment>>> Comment(Guid id, CommentRequest request, CancellationToken ct)
     {
-        var comment = new ListingComment{ListingId=id,UserId=request.UserId==Guid.Empty?DemoIds.Customer:request.UserId,Body=request.Body};
-        db.ListingComments.Add(comment); var listing = await db.Listings.FindAsync([id], ct); if (listing is not null) listing.CommentCount++;
+        var comment = new ListingComment { ListingId = id, UserId = request.UserId == Guid.Empty ? DemoIds.Customer : request.UserId, Body = request.Body };
+        db.ListingComments.Add(comment);
+        var listing = await db.Listings.FindAsync([id], ct);
+        if (listing is not null)
+        {
+            listing.CommentCount++;
+            if (listing.SellerId != comment.UserId)
+            {
+                var imageUrl = await db.MediaAssets.AsNoTracking()
+                    .Where(x => x.ListingId == listing.Id)
+                    .OrderBy(x => x.CreatedAt)
+                    .Select(x => x.Url)
+                    .FirstOrDefaultAsync(ct) ?? "";
+                db.Notifications.Add(new Notification
+                {
+                    UserId = listing.SellerId,
+                    Type = "Listing",
+                    Title = "New comment",
+                    Body = comment.Body.Length > 160 ? comment.Body[..160] : comment.Body,
+                    Url = $"/listings/{listing.Id}",
+                    EntityType = "Listing",
+                    EntityId = listing.Id,
+                    ImageUrl = imageUrl
+                });
+            }
+        }
         await db.SaveChangesAsync(ct);
         return Ok(ApiResponse<ListingComment>.Ok(comment, HttpContext.TraceIdentifier));
     }
@@ -273,7 +336,22 @@ public sealed class ListingsController(AppDbContext db) : ControllerBase
         conversation.LastMessagePreview = body.Length > 160 ? body[..160] : body;
         conversation.UpdatedAt = DateTimeOffset.UtcNow;
         db.Messages.Add(message);
-        db.Notifications.Add(new Notification { UserId = listing.SellerId, Type = "Message", Title = "New message", Body = body.Length > 160 ? body[..160] : body, Url = $"/messages?conversationId={conversation.Id}" });
+        var listingImage = await db.MediaAssets.AsNoTracking()
+            .Where(x => x.ListingId == listing.Id)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => x.Url)
+            .FirstOrDefaultAsync(ct) ?? "";
+        db.Notifications.Add(new Notification
+        {
+            UserId = listing.SellerId,
+            Type = "Message",
+            Title = "New message",
+            Body = body.Length > 160 ? body[..160] : body,
+            Url = $"/messages?conversationId={conversation.Id}",
+            EntityType = "Conversation",
+            EntityId = conversation.Id,
+            ImageUrl = listingImage
+        });
         await db.SaveChangesAsync(ct);
         return Ok(ApiResponse<object>.Ok(new { conversation, message }, HttpContext.TraceIdentifier));
     }

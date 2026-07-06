@@ -1,14 +1,19 @@
 import { appConfig } from '@/lib/config';
-import { getSessionUser } from '@/lib/api/session';
+import { clearSession, getSessionToken, getSessionUser, redirectToLogin } from '@/lib/api/session';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData;
-  const token = typeof window !== 'undefined' ? localStorage.getItem('om_token') : null;
+  const token = getSessionToken();
   const baseHeaders: Record<string, string> = isFormData ? {} : { 'Content-Type': 'application/json' };
   if (token) baseHeaders.Authorization = `Bearer ${token}`;
   const headers = { ...baseHeaders, ...(init?.headers as Record<string, string> | undefined ?? {}) };
   const response = await fetch(`${appConfig.apiBaseUrl}${path}`, { cache: 'no-store', ...init, headers });
   const payload = await response.json().catch(() => null);
+  if (response.status === 401) {
+    clearSession();
+    redirectToLogin();
+    throw new Error('Session expired. Please sign in again.');
+  }
   if (!response.ok) throw new Error(payload?.error?.message ?? `API request failed: ${response.status}`);
   if (payload && typeof payload === 'object' && 'success' in payload) {
     if (!payload.success) throw new Error(payload?.error?.message ?? 'API error');
@@ -77,6 +82,7 @@ export const apiClient = {
   get<T>(path: string) { return request<T>(path); },
   post<T>(path: string, body: unknown) { return request<T>(path, { method: 'POST', body: body instanceof FormData ? body : JSON.stringify(body) }); },
   put<T>(path: string, body: unknown) { return request<T>(path, { method: 'PUT', body: body instanceof FormData ? body : JSON.stringify(body) }); },
+  delete<T>(path: string) { return request<T>(path, { method: 'DELETE' }); },
 };
 
 export const marketplaceApi = {
@@ -101,7 +107,10 @@ export const marketplaceApi = {
   like: (id: string, userId = currentUserId()) => apiClient.post(`/listings/${id}/like`, { userId }),
   messageSeller: (id: string, body: string, userId = currentUserId() || DEMO_CUSTOMER_ID) => apiClient.post(`/listings/${id}/message`, { buyerId: userId, body }),
   favorites: (userId: string) => apiClient.get<{ items: ListingDto[]; totalItems: number }>(`/favorites?userId=${userId}`),
-  notifications: (userId: string) => apiClient.get<{ items: any[]; unread: number }>(`/notifications?userId=${userId}`),
+  notifications: (userId: string, params?: { type?: string; unreadOnly?: boolean }) => { const qs = new URLSearchParams({ userId }); if (params?.type && params.type !== 'All') qs.set('type', params.type); if (params?.unreadOnly) qs.set('unreadOnly', 'true'); return apiClient.get<{ items: any[]; unread: number; totalItems?: number }>(`/notifications?${qs}`); },
+  markNotificationRead: (id: string, userId: string) => apiClient.post(`/notifications/${id}/read?userId=${userId}`, {}),
+  markAllNotificationsRead: (userId: string) => apiClient.post('/notifications/read-all', { userId }),
+  deleteNotification: (id: string, userId: string) => apiClient.delete(`/notifications/${id}?userId=${userId}`),
   conversations: (userId: string) => apiClient.get<{ items: any[] }>(`/messages?userId=${userId}`),
   conversationThread: (conversationId: string, userId = currentUserId() || DEMO_CUSTOMER_ID) => apiClient.get<any>(`/messages/${conversationId}?userId=${userId}`),
   sendConversationMessage: (conversationId: string, body: string, userId = currentUserId() || DEMO_CUSTOMER_ID) => apiClient.post<any>(`/messages/${conversationId}`, { senderId: userId, body }),

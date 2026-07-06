@@ -138,13 +138,22 @@ public sealed class MessagesController(AppDbContext db) : ControllerBase
         conv.LastMessagePreview = body.Length > 160 ? body[..160] : body;
         conv.UpdatedAt = DateTimeOffset.UtcNow;
         db.Messages.Add(msg);
+        var listingImage = await db.MediaAssets.AsNoTracking()
+            .Where(x => x.ListingId == conv.ListingId)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => x.Url)
+            .FirstOrDefaultAsync(ct) ?? "";
+
         db.Notifications.Add(new Notification
         {
             UserId = receiverId,
             Type = "Message",
             Title = "New message",
             Body = body.Length > 160 ? body[..160] : body,
-            Url = $"/messages?conversationId={conversationId}"
+            Url = $"/messages?conversationId={conversationId}",
+            EntityType = "Conversation",
+            EntityId = conversationId,
+            ImageUrl = listingImage
         });
 
         await db.SaveChangesAsync(ct);

@@ -60,7 +60,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         builder.Entity<ListingReview>(e=>{e.ToTable("listing_reviews");e.HasKey(x=>x.Id);e.HasIndex(x=>x.SellerId);});
         builder.Entity<Conversation>(e=>{e.ToTable("conversations");e.HasKey(x=>x.Id);e.HasIndex(x=>new{x.ListingId,x.BuyerId,x.SellerId});e.HasIndex(x=>x.LastMessageAt);});
         builder.Entity<Message>(e=>{e.ToTable("messages");e.HasKey(x=>x.Id);e.HasIndex(x=>x.ConversationId);e.HasIndex(x=>new{x.ConversationId,x.CreatedAt});e.HasIndex(x=>x.ReceiverId);});
-        builder.Entity<Notification>(e=>{e.ToTable("notifications");e.HasKey(x=>x.Id);e.HasIndex(x=>new{x.UserId,x.IsRead,x.CreatedAt});});
+        builder.Entity<Notification>(e=>{e.ToTable("notifications");e.HasKey(x=>x.Id);e.HasIndex(x=>new{x.UserId,x.IsRead,x.CreatedAt});e.HasIndex(x=>new{x.UserId,x.Type,x.CreatedAt});e.HasIndex(x=>new{x.EntityType,x.EntityId});});
         builder.Entity<Report>(e=>{e.ToTable("reports");e.HasKey(x=>x.Id);e.HasIndex(x=>new{x.TargetType,x.TargetId,x.Status});});
         builder.Entity<AuditLog>(e=>{e.ToTable("audit_logs");e.HasKey(x=>x.Id);e.HasIndex(x=>x.CreatedAt);});
         builder.Entity<Order>(e=>{e.ToTable("orders");e.HasKey(x=>x.Id);e.HasIndex(x=>x.OrderNumber).IsUnique();});

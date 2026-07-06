@@ -13,9 +13,10 @@ public sealed class FeedService(IAppDbContext db) : IFeedService
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
+        var now = DateTimeOffset.UtcNow;
 
         var query = db.Listings.AsNoTracking()
-            .Where(x => x.Status == "Published" && !x.IsDeleted)
+            .Where(x => x.Status == "Published" && !x.IsDeleted && (!x.ExpiresAt.HasValue || x.ExpiresAt >= now))
             .OrderByDescending(x => x.IsPinned)
             .ThenByDescending(x => x.IsFeatured)
             .ThenByDescending(x => x.CreatedAt);
@@ -51,7 +52,7 @@ public sealed class FeedService(IAppDbContext db) : IFeedService
             }).Cast<object>().ToListAsync(ct);
 
         var featured = await db.Listings.AsNoTracking()
-            .Where(x => x.Status == "Published" && (x.IsFeatured || x.IsPinned) && !x.IsDeleted)
+            .Where(x => x.Status == "Published" && (x.IsFeatured || x.IsPinned) && !x.IsDeleted && (!x.ExpiresAt.HasValue || x.ExpiresAt >= now))
             .OrderByDescending(x => x.IsPinned).ThenByDescending(x => x.CreatedAt).Take(8)
             .Select(x => new
             {
@@ -93,7 +94,7 @@ public sealed class FeedService(IAppDbContext db) : IFeedService
                 name = x.Code,
                 slug = x.Slug,
                 description = x.Code,
-                count = db.Listings.Count(l => l.CategoryId == x.Id && l.Status == "Published" && !l.IsDeleted)
+                count = db.Listings.Count(l => l.CategoryId == x.Id && l.Status == "Published" && !l.IsDeleted && (!l.ExpiresAt.HasValue || l.ExpiresAt >= now))
             }).Cast<object>().ToListAsync(ct);
 
         var items = listings.Select(x => new FeedItemDto("listing", x)).ToList();

@@ -30,5 +30,9 @@ public sealed class Notification : OpenMarketplace.Domain.Common.Entity
     public string Title { get; set; } = "";
     public string Body { get; set; } = "";
     public string Url { get; set; } = "";
+    public string EntityType { get; set; } = "";
+    public Guid? EntityId { get; set; }
+    public string ImageUrl { get; set; } = "";
     public bool IsRead { get; set; }
+    public DateTimeOffset? ReadAt { get; set; }
 }
