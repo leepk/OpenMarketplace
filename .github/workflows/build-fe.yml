@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/openmarket-customer:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/openmarket-customer:latest
             docker-compose -p openmarket-customer -f /opt/openmarket/customer-compose.yml down
             docker image prune -f
             docker-compose -p openmarket-customer -f /opt/openmarket/customer-compose.yml up -d
