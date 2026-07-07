@@ -8,6 +8,7 @@ COPY src/OpenMarketplace.Api/OpenMarketplace.Api.csproj src/OpenMarketplace.Api/
 COPY src/OpenMarketplace.Application/OpenMarketplace.Application.csproj src/OpenMarketplace.Application/
 COPY src/OpenMarketplace.Domain/OpenMarketplace.Domain.csproj src/OpenMarketplace.Domain/
 COPY src/OpenMarketplace.Infrastructure/OpenMarketplace.Infrastructure.csproj src/OpenMarketplace.Infrastructure/
+COPY src/OpenMarketplace.Shared/OpenMarketplace.Shared.csproj src/OpenMarketplace.Shared/
 
 RUN dotnet restore OpenMarketplace.sln
 
