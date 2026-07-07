@@ -20,13 +20,13 @@ jobs:
       - name: Build Image
         run: |
           docker build \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/classifieds-api:latest \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/openmarket-api:latest \
             -f ./Classifieds.Api/Dockerfile \
             ./Classifieds.Api
 
       - name: Push Image
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/classifieds-api:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/openmarket-api:latest
 
       - name: Deploy To Server
         uses: appleboy/ssh-action@v1.0.3
@@ -36,5 +36,5 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            docker compose -p classifieds-api -f /opt/classifieds/api-compose.yml pull
-            docker compose -p classifieds-api -f /opt/classifieds/api-compose.yml up -d --force-recreate
+            docker compose -p openmarket-api -f /opt/openmarket/api-compose.yml pull
+            docker compose -p openmarket-api -f /opt/openmarket/api-compose.yml up -d --force-recreate
