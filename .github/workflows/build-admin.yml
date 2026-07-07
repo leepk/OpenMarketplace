@@ -19,17 +19,20 @@ jobs:
 
       - name: Create Frontend Env
         run: |
-          echo "VITE_API_BASE_URL=${{ secrets.VITE_API_URL }}" > ./admin-web/.env
+          echo "VITE_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}" > ./admin-web/.env
+          echo "VITE_SWAGGER_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}/swagger/index.html" >> ./admin-web/.env
+          echo "VITE_DEFAULT_ADMIN_EMAIL=admin@example.com" >> ./admin-web/.env
+          echo "VITE_DEFAULT_ADMIN_PASSWORD=Password123!" >> ./admin-web/.env
 
       - name: Build Image
         run: |
           docker build \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/classifieds-admin:latest \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/openmarket-admin:latest \
             ./admin-web
 
       - name: Push Image
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/classifieds-admin:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/openmarket-admin:latest
 
       - name: Deploy To Server
         uses: appleboy/ssh-action@v1.0.3
@@ -39,5 +42,5 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |            
-            docker compose -p classifieds-admin -f /opt/classifieds/admin-compose.yml pull
-            docker compose -p classifieds-admin -f /opt/classifieds/admin-compose.yml up -d --force-recreate
+            docker compose -p openmarket-admin -f /opt/openmarket/admin-compose.yml pull
+            docker compose -p openmarket-admin -f /opt/openmarket/admin-compose.yml up -d --force-recreate
