@@ -22,7 +22,7 @@ jobs:
           docker build \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/openmarket-api:latest \
             -f ./backend/Dockerfile \
-            ./Classifieds.Api
+            ./backend
 
       - name: Push Image
         run: |
