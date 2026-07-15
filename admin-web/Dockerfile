@@ -8,6 +8,12 @@ RUN yarn install --ignore-engines
 
 COPY . .
 
+ARG VITE_API_BASE_URL
+ARG VITE_SWAGGER_URL
+
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_SWAGGER_URL=$VITE_SWAGGER_URL
+
 RUN yarn build
 
 FROM nginx:alpine
