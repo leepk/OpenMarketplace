@@ -40,3 +40,40 @@ ORDER BY "MigrationId";
 2026-07-15 12:55:24.184 -07:00 [INF] Seeding database automatically...
 2026-07-15 12:55:25.300 -07:00 [INF] Seed completed with sample marketplace data
 2026-07-15 12:55:25.301 -07:00 [INF] Database initialization completed
+2026-07-15 15:38:14.323 -07:00 [INF] HTTP OPTIONS /api/v1/auth/admin-login responded 204 in 45.0691 ms
+2026-07-15 15:38:14.998 -07:00 [INF] HTTP POST /api/v1/auth/admin-login responded 200 in 647.5413 ms
+2026-07-15 15:38:15.095 -07:00 [INF] HTTP OPTIONS /api/v1/admin/dashboard responded 204 in 0.7009 ms
+2026-07-15 15:38:15.412 -07:00 [INF] HTTP GET /api/v1/admin/dashboard responded 200 in 290.9785 ms
+2026-07-15 15:38:19.246 -07:00 [INF] HTTP OPTIONS /api/v1/admin/users responded 204 in 0.1623 ms
+2026-07-15 15:38:19.315 -07:00 [INF] HTTP GET /api/v1/admin/users responded 200 in 66.8660 ms
+2026-07-15 15:38:28.028 -07:00 [INF] HTTP OPTIONS /api/v1/admin/health responded 204 in 1.3246 ms
+2026-07-15 15:38:28.056 -07:00 [INF] HTTP GET /api/v1/admin/health responded 200 in 13.2205 ms
+2026-07-15 15:38:31.249 -07:00 [INF] HTTP OPTIONS /api/v1/admin/users responded 204 in 0.1153 ms
+2026-07-15 15:38:31.266 -07:00 [INF] HTTP GET /api/v1/admin/users responded 200 in 11.7715 ms
+2026-07-15 15:38:31.794 -07:00 [INF] HTTP OPTIONS /api/v1/admin/messages/conversations responded 204 in 0.1393 ms
+2026-07-15 15:38:31.878 -07:00 [INF] HTTP GET /api/v1/admin/messages/conversations responded 200 in 80.3650 ms
+2026-07-15 15:38:31.889 -07:00 [INF] HTTP OPTIONS /api/v1/admin/messages/conversations/019f6751-9880-7e69-bcf5-834c3bac4dd4 responded 204 in 0.0741 ms
+2026-07-15 15:38:31.931 -07:00 [INF] HTTP GET /api/v1/admin/messages/conversations/019f6751-9880-7e69-bcf5-834c3bac4dd4 responded 200 in 40.6399 ms
+2026-07-15 15:38:34.861 -07:00 [INF] HTTP OPTIONS /api/v1/admin/site-settings responded 204 in 0.2397 ms
+2026-07-15 15:38:35.001 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 134.9814 ms
+2026-07-15 15:38:35.021 -07:00 [INF] HTTP GET /site/logo-openmarketplace.svg responded 200 in 15.5720 ms
+2026-07-15 15:38:35.021 -07:00 [INF] HTTP GET /site/favicon-openmarketplace.svg responded 200 in 15.6430 ms
+2026-07-15 15:38:46.351 -07:00 [INF] HTTP OPTIONS /api/v1/admin/site-settings responded 204 in 0.1762 ms
+2026-07-15 15:38:46.469 -07:00 [INF] HTTP POST /api/v1/admin/site-settings responded 200 in 116.1682 ms
+2026-07-15 15:38:46.476 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 2.7675 ms
+2026-07-15 15:39:22.334 -07:00 [INF] HTTP OPTIONS /api/v1/admin/site-settings responded 204 in 0.8414 ms
+2026-07-15 15:39:22.398 -07:00 [INF] HTTP POST /api/v1/admin/site-settings responded 200 in 60.7883 ms
+2026-07-15 15:39:22.403 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 2.8980 ms
+2026-07-15 15:39:23.676 -07:00 [INF] HTTP POST /api/v1/admin/site-settings responded 200 in 24.2745 ms
+2026-07-15 15:39:23.681 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 2.2878 ms
+2026-07-15 15:39:38.804 -07:00 [INF] HTTP OPTIONS /api/v1/admin/site-settings responded 204 in 0.3333 ms
+2026-07-15 15:39:38.823 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 16.6321 ms
+2026-07-15 15:40:09.318 -07:00 [INF] HTTP OPTIONS /api/v1/admin/site-settings responded 204 in 3.2986 ms
+2026-07-15 15:40:09.363 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 38.2325 ms
+2026-07-15 15:40:10.585 -07:00 [INF] HTTP GET /api/v1/admin/site-settings responded 200 in 14.7929 ms
+2026-07-15 15:41:32.597 -07:00 [INF] HTTP OPTIONS /api/v1/admin/listings responded 204 in 1.4159 ms
+2026-07-15 15:41:32.668 -07:00 [INF] HTTP GET /api/v1/admin/listings responded 200 in 54.6908 ms
+2026-07-15 15:41:36.604 -07:00 [INF] HTTP OPTIONS /api/v1/admin/listings/019f6751-97b7-7f3d-a6e3-9ba2b7954c08/status responded 204 in 0.2850 ms
+2026-07-15 15:41:36.697 -07:00 [INF] HTTP POST /api/v1/admin/listings/019f6751-97b7-7f3d-a6e3-9ba2b7954c08/status responded 200 in 72.8826 ms
+2026-07-15 15:41:36.704 -07:00 [INF] HTTP GET /api/v1/admin/listings responded 200 in 3.3518 ms
+2026-07-15 15:42:25.055 -07:00 [INF] HTTP GET /listings/019f6751-97b7-7f3d-a6e3-9ba2b7954c08 responded 404 in 4.5756 ms
