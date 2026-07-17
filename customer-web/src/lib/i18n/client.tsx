@@ -1,15 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { en, vi, type Dictionary, type Lang } from '@/i18n';
+import { en, vi, es, ja, zh, type Dictionary, type Lang } from '@/i18n';
 export type { Lang } from '@/i18n';
 import { getCategoryLabelKey } from '@/constants/categories';
 
-const dictionaries: Record<Lang, Dictionary> = { en, vi };
+const dictionaries: Record<Lang, Dictionary> = { en, vi, es, ja, zh };
 const STORAGE_KEY = 'om-language';
 
 function normalizeLang(value?: string | null): Lang {
-  return value === 'vi' ? 'vi' : 'en';
+  return value === 'vi' || value === 'es' || value === 'ja' || value === 'zh' ? value : 'en';
 }
 
 export function getCategoryLabel(value?: string | null, lang: Lang = 'en') {

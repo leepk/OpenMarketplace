@@ -45,7 +45,16 @@ public sealed class UsersController(AppDbContext db) : ControllerBase
             return BadRequest(ApiResponse<object>.Fail("Validation", "Full name is required.", HttpContext.TraceIdentifier));
 
         user.Name = name;
-        user.Phone = request.Phone?.Trim() ?? string.Empty;
+        var newPhone = request.Phone?.Trim() ?? string.Empty;
+        if (!string.Equals(user.Phone, newPhone, StringComparison.Ordinal))
+        {
+            user.Phone = newPhone;
+            user.PhoneVerified = false;
+            user.PhoneVerificationCodeHash = string.Empty;
+            user.PhoneVerificationExpiresAt = null;
+            user.PhoneVerificationSentAt = null;
+            user.PhoneVerificationAttempts = 0;
+        }
         user.Location = request.Location?.Trim() ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(request.AvatarUrl)) user.AvatarUrl = request.AvatarUrl.Trim();
         if (string.IsNullOrWhiteSpace(user.AvatarUrl)) user.AvatarUrl = DefaultAvatar(user.Email);

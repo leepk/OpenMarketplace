@@ -60,9 +60,9 @@ function artKind(item: ListingDto) {
 }
 
 function MapBottomListingCard({ item }: { item: ListingDto }) {
-  const { t } = useI18n();
+  const { t, category } = useI18n();
   const src = firstImage(item);
-  const fallbackLabel = item.categoryName ?? t('featuredListings');
+  const fallbackLabel = category(item.categoryCode ?? item.categoryName) || t('featuredListings');
   return (
     <article className="map-bottom-card-v3">
       <Link href={`/listings/${item.id}`} className={`map-bottom-image-v3 image-${artKind(item)}`}>
@@ -70,7 +70,7 @@ function MapBottomListingCard({ item }: { item: ListingDto }) {
         {src && (
           <img
             src={src}
-            alt={item.title ?? 'Listing'}
+            alt={item.title ?? t('listing')}
             onError={(event) => {
               event.currentTarget.remove();
             }}
@@ -80,9 +80,9 @@ function MapBottomListingCard({ item }: { item: ListingDto }) {
       <Link href={`/listings/${item.id}`} className="map-bottom-info-v3">
         <strong>{item.title ?? t('yourListingTitle')}</strong>
         <b>{money(item.price)}</b>
-        <span>{item.location ?? 'San Jose, CA'}</span>
+        <span>{item.location ?? t('locationDefault')}</span>
       </Link>
-      <a className="map-bottom-directions-v3" href={directionsUrl(item)} target="_blank" rel="noreferrer">Directions</a>
+      <a className="map-bottom-directions-v3" href={directionsUrl(item)} target="_blank" rel="noreferrer">{t('directions')}</a>
     </article>
   );
 }
@@ -108,7 +108,7 @@ function project(
 }
 
 export function MapExperience({ listings }: { listings: ListingDto[] }) {
-  const { t } = useI18n();
+  const { t, category } = useI18n();
   const [userPosition, setUserPosition] = useState<UserPosition | null>(null);
   const [geoMessage, setGeoMessage] = useState(t("useYourLocation"));
   const [bottomIndex, setBottomIndex] = useState(0);
@@ -225,7 +225,7 @@ export function MapExperience({ listings }: { listings: ListingDto[] }) {
           {sorted.slice(0, 8).map((item) => (
             <div key={item.id} className="map-result-with-direction-v2">
               <ListingCard listing={item} variant="mini" />
-              <a href={directionsUrl(item)} target="_blank" rel="noreferrer">Directions</a>
+              <a href={directionsUrl(item)} target="_blank" rel="noreferrer">{t('directions')}</a>
             </div>
           ))}
           {!sorted.length && (
@@ -287,8 +287,8 @@ export function MapExperience({ listings }: { listings: ListingDto[] }) {
             </h3>
             {bottomCanSlide && (
               <div className="map-bottom-nav-v2">
-                <button type="button" aria-label="Previous listings" onClick={goBottomPrev}>‹</button>
-                <button type="button" aria-label="Next listings" onClick={goBottomNext}>›</button>
+                <button type="button" aria-label={t('previousListings')} onClick={goBottomPrev}>‹</button>
+                <button type="button" aria-label={t('nextListings')} onClick={goBottomNext}>›</button>
               </div>
             )}
           </div>

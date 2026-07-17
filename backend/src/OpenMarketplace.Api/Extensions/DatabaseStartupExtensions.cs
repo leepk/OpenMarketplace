@@ -36,8 +36,32 @@ public static class DatabaseStartupExtensions
         logger.LogInformation("Ensuring package sort order schema repair...");
         await EnsurePackageSortOrderSchemaAsync(db, ct);
 
-        logger.LogInformation("Seeding database automatically...");
-        await seeder.SeedAsync(ct);
+        logger.LogInformation("Ensuring authentication schema repair...");
+        await EnsureAuthenticationSchemaAsync(db, ct);
+
+        logger.LogInformation("Ensuring seed history schema...");
+        await EnsureSeedHistorySchemaAsync(db, ct);
+
+        const string initialSeedVersion = "InitialMarketplaceDataV1";
+        if (await HasSeedVersionAsync(db, initialSeedVersion, ct))
+        {
+            logger.LogInformation("Seed version {SeedVersion} already applied. Skipping seed data.", initialSeedVersion);
+        }
+        else if (await HasExistingInitialSeedDataAsync(db, ct))
+        {
+            // Older databases were created before seed history existed. Mark them as seeded
+            // without running the upsert seeder again, so admin-edited categories, packages,
+            // providers, advertisements and settings are not overwritten on upgrade.
+            await RecordSeedVersionAsync(db, initialSeedVersion, ct);
+            logger.LogInformation("Existing marketplace data detected. Marked seed version {SeedVersion} as applied without reseeding.", initialSeedVersion);
+        }
+        else
+        {
+            logger.LogInformation("Applying seed version {SeedVersion}...", initialSeedVersion);
+            await seeder.SeedAsync(ct);
+            await RecordSeedVersionAsync(db, initialSeedVersion, ct);
+            logger.LogInformation("Seed version {SeedVersion} applied successfully.", initialSeedVersion);
+        }
 
         logger.LogInformation("Database initialization completed");
     }
@@ -151,6 +175,89 @@ SET "SortOrder" = CASE UPPER("Code")
 END
 WHERE "SortOrder" = 0 OR "SortOrder" IS NULL;
 """, ct);
+    }
+
+
+    private static async Task EnsureAuthenticationSchemaAsync(AppDbContext db, CancellationToken ct)
+    {
+        // Keep upgrades compatible with databases created before password reset and
+        // phone verification were introduced. This repair intentionally runs before
+        // DatabaseSeeder because EF includes every mapped property in user queries.
+        await db.Database.ExecuteSqlRawAsync("""
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS "PasswordResetTokenHash" text NOT NULL DEFAULT '';
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS "PasswordResetExpiresAt" timestamptz NULL;
+
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS "PhoneVerificationCodeHash" text NOT NULL DEFAULT '';
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS "PhoneVerificationExpiresAt" timestamptz NULL;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS "PhoneVerificationSentAt" timestamptz NULL;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS "PhoneVerificationAttempts" integer NOT NULL DEFAULT 0;
+
+CREATE INDEX IF NOT EXISTS "IX_user_profiles_PasswordResetTokenHash"
+    ON user_profiles ("PasswordResetTokenHash");
+""", ct);
+    }
+
+
+    private static async Task EnsureSeedHistorySchemaAsync(AppDbContext db, CancellationToken ct)
+    {
+        await db.Database.ExecuteSqlRawAsync("""
+CREATE TABLE IF NOT EXISTS system_seed_history (
+    "Version" text NOT NULL PRIMARY KEY,
+    "AppliedAt" timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+""", ct);
+    }
+
+    private static async Task<bool> HasSeedVersionAsync(AppDbContext db, string version, CancellationToken ct)
+    {
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+            await connection.OpenAsync(ct);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT EXISTS (SELECT 1 FROM system_seed_history WHERE \"Version\" = @version);";
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = "version";
+        parameter.Value = version;
+        command.Parameters.Add(parameter);
+
+        return Convert.ToBoolean(await command.ExecuteScalarAsync(ct));
+    }
+
+    private static async Task<bool> HasExistingInitialSeedDataAsync(AppDbContext db, CancellationToken ct)
+    {
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+            await connection.OpenAsync(ct);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+SELECT
+    EXISTS (SELECT 1 FROM categories WHERE lower("Code") = 'vehicles')
+    AND EXISTS (SELECT 1 FROM packages WHERE upper("Code") = 'FREE')
+    AND EXISTS (SELECT 1 FROM user_profiles);
+""";
+
+        return Convert.ToBoolean(await command.ExecuteScalarAsync(ct));
+    }
+
+    private static async Task RecordSeedVersionAsync(AppDbContext db, string version, CancellationToken ct)
+    {
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+            await connection.OpenAsync(ct);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+INSERT INTO system_seed_history ("Version", "AppliedAt")
+VALUES (@version, CURRENT_TIMESTAMP)
+ON CONFLICT ("Version") DO NOTHING;
+""";
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = "version";
+        parameter.Value = version;
+        command.Parameters.Add(parameter);
+        await command.ExecuteNonQueryAsync(ct);
     }
 
     public static async Task InitializeDatabaseWithRetryAsync(this WebApplication app, CancellationToken ct = default)

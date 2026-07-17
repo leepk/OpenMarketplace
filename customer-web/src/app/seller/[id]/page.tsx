@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api/apiClient';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { Icon } from '@/components/ui/Icon';
+import { T } from '@/components/i18n/T';
 
 function getInitials(name?: string | null) {
   const parts = (name ?? 'Seller').trim().split(/\s+/).filter(Boolean);
@@ -33,9 +34,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <main className="seller-profile-shell shell-wide">
         <section className="seller-empty-modern">
           <span><Icon name="user" size={42} /></span>
-          <h1>Seller not found</h1>
-          <p>This seller profile is unavailable or has been removed.</p>
-          <Link href="/search">Browse listings</Link>
+          <h1><T k="sellerNotFound" /></h1>
+          <p><T k="sellerUnavailable" /></p>
+          <Link href="/search"><T k="browseListings" /></Link>
         </section>
       </main>
     );
@@ -52,9 +53,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <main className="seller-profile-shell shell-wide">
       <nav className="seller-breadcrumb">
-        <Link href="/">Home</Link>
+        <Link href="/"><T k="home" /></Link>
         <span>/</span>
-        <Link href="/search">Marketplace</Link>
+        <Link href="/search"><T k="marketplace" /></Link>
         <span>/</span>
         <b>{sellerName}</b>
       </nav>
@@ -68,91 +69,91 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <p><Icon name="pin" size={15} /> {location}</p>
             <div className="seller-rating-row">
               <strong><Icon name="star" size={17} /> {rating(user.rating)}</strong>
-              <span>{formatNumber(user.reviewCount)} reviews</span>
+              <span>{formatNumber(user.reviewCount)} <T k="reviewsLower" /></span>
             </div>
             <div className="seller-cta-stack">
-              <Link className="seller-primary-action" href={`/messages?seller=${user.id ?? id}`}><Icon name="message" size={18} /> Message seller</Link>
-              <Link className="seller-secondary-action" href={`/search?sellerId=${user.id ?? id}`}><Icon name="list" size={18} /> View all listings</Link>
+              <Link className="seller-primary-action" href={`/messages?seller=${user.id ?? id}`}><Icon name="message" size={18} /> <T k="messageSeller" /></Link>
+              <Link className="seller-secondary-action" href={`/search?sellerId=${user.id ?? id}`}><Icon name="list" size={18} /> <T k="viewAllListings" /></Link>
             </div>
           </section>
 
           <section className="seller-trust-card">
-            <div className="seller-section-head"><span><Icon name="shield" size={18} /></span><div><strong>Trust & verification</strong><small>{verifiedCount} verification checks</small></div></div>
+            <div className="seller-section-head"><span><Icon name="shield" size={18} /></span><div><strong><T k="trustVerification" /></strong><small>{verifiedCount} <T k="verificationChecks" /></small></div></div>
             <div className="trust-list-modern">
-              <span className={badges.phoneVerified ? 'ok' : ''}><Icon name="check" size={15} /> Phone verified</span>
-              <span className={badges.emailVerified ? 'ok' : ''}><Icon name="check" size={15} /> Email verified</span>
-              <span className={badges.businessVerified ? 'ok' : ''}><Icon name="check" size={15} /> Business verified</span>
-              <span className={badges.identityVerified ? 'ok' : ''}><Icon name="check" size={15} /> Identity verified</span>
+              <span className={badges.phoneVerified ? 'ok' : ''}><Icon name="check" size={15} /> <T k="phoneVerifiedLabel" /></span>
+              <span className={badges.emailVerified ? 'ok' : ''}><Icon name="check" size={15} /> <T k="emailVerifiedLabel" /></span>
+              <span className={badges.businessVerified ? 'ok' : ''}><Icon name="check" size={15} /> <T k="businessVerifiedLabel" /></span>
+              <span className={badges.identityVerified ? 'ok' : ''}><Icon name="check" size={15} /> <T k="identityVerifiedLabel" /></span>
             </div>
           </section>
 
           <section className="seller-safety-card">
-            <h3>Safety tips</h3>
-            <p>Meet in public places, inspect items before paying, and never share login codes or private information.</p>
+            <h3><T k="safetyTips" /></h3>
+            <p><T k="sellerSafetyText" /></p>
           </section>
         </aside>
 
         <section className="seller-profile-main">
           <section className="seller-hero-modern">
             <div>
-              <span className="seller-eyebrow">Verified marketplace seller</span>
+              <span className="seller-eyebrow"><T k="verifiedMarketplaceSeller" /></span>
               <h2>{sellerName}</h2>
-              <p>{user.bio ?? user.about ?? 'Selling quality local items with fast replies and safe pickup options.'}</p>
+              <p>{user.bio ?? user.about ?? <T k="sellerDefaultBio" />}</p>
               <div className="seller-quick-stats">
-                <span><b>{formatNumber(listings.length || user.listingCount)}</b><small>Active listings</small></span>
-                <span><b>{rating(user.rating)}</b><small>Seller rating</small></span>
-                <span><b>{formatNumber(user.soldCount)}</b><small>Sold items</small></span>
-                <span><b>{user.memberSince ? '2026' : 'New'}</b><small>Member since</small></span>
+                <span><b>{formatNumber(listings.length || user.listingCount)}</b><small><T k="activeListings" /></small></span>
+                <span><b>{rating(user.rating)}</b><small><T k="sellerRating" /></small></span>
+                <span><b>{formatNumber(user.soldCount)}</b><small><T k="soldItems" /></small></span>
+                <span><b>{user.memberSince ? '2026' : 'New'}</b><small><T k="memberSince" /></small></span>
               </div>
             </div>
             <div className="seller-hero-panel">
               <Icon name="shield" size={34} />
-              <strong>Safe local buying</strong>
-              <p>Use marketplace messages to keep records and meet in a public place.</p>
+              <strong><T k="safeLocalBuying" /></strong>
+              <p><T k="safeLocalBuyingText" /></p>
             </div>
           </section>
 
           <section className="seller-listings-panel">
             <div className="seller-panel-title">
               <div>
-                <span>Seller inventory</span>
-                <h3>Active listings</h3>
+                <span><T k="sellerInventory" /></span>
+                <h3><T k="activeListings" /></h3>
               </div>
-              <Link href={`/search?sellerId=${user.id ?? id}`}>See all</Link>
+              <Link href={`/search?sellerId=${user.id ?? id}`}><T k="seeAll" /></Link>
             </div>
             {listings.length ? (
               <div className="seller-listings-grid">
                 {listings.map((listing: any) => <ListingCard key={listing.id} listing={listing} variant="featured" />)}
               </div>
             ) : (
-              <div className="seller-empty-listings"><Icon name="list" size={34} /><strong>No active listings yet</strong><p>Check back later for new items from this seller.</p></div>
+              <div className="seller-empty-listings"><Icon name="list" size={34} /><strong><T k="noActiveListingsYet" /></strong><p><T k="checkBackSellerListings" /></p></div>
             )}
           </section>
         </section>
 
         <aside className="seller-profile-right">
           <section className="seller-mini-panel">
-            <h3>Seller score</h3>
+            <h3><T k="sellerScore" /></h3>
             <div className="seller-score-circle"><strong>{rating(user.rating)}</strong><span>/ 5</span></div>
-            <p>Based on reviews, listing quality, and marketplace activity.</p>
+            <p><T k="sellerScoreText" /></p>
           </section>
 
           <section className="seller-mini-panel">
-            <h3>Recent reviews</h3>
+            <h3><T k="recentReviews" /></h3>
             {reviews.length ? reviews.slice(0, 3).map((review: any) => (
               <div className="seller-review-item" key={review.id ?? review.createdAt}>
                 <strong><Icon name="star" size={13} /> {rating(review.rating)}</strong>
-                <p>{review.comment ?? review.body ?? 'Great seller and smooth transaction.'}</p>
+                <p>{review.comment ?? review.body ?? <T k="defaultReviewText" />}</p>
               </div>
             )) : (
-              <div className="seller-review-item empty"><strong>No reviews yet</strong><p>This seller has not received public reviews.</p></div>
+              <div className="seller-review-item empty"><strong><T k="noReviewsYet" /></strong><p><T k="sellerNoPublicReviews" /></p></div>
             )}
           </section>
 
           <section className="seller-mini-panel seller-contact-panel">
-            <h3>Quick contact</h3>
-            <p>Ask about availability, pickup location, and payment options.</p>
-            <Link href={`/messages?seller=${user.id ?? id}`}>Start conversation</Link>
+            <h3><T k="quickContact" /></h3>
+            <p><T k="quickContactText" /></p>
+            <Link href={`/messages?seller=${user.id ?? id}`}><T k="startConversation" /></Link>
           </section>
         </aside>
       </section>

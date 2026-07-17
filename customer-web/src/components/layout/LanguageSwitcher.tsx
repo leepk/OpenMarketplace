@@ -5,6 +5,9 @@ import { useI18n, type Lang } from '@/lib/i18n/client';
 const languageOptions: Array<{ value: Lang; label: string; short: string }> = [
   { value: 'en', label: 'English', short: 'EN' },
   { value: 'vi', label: 'Tiếng Việt', short: 'VI' },
+  { value: 'es', label: 'Español', short: 'ES' },
+  { value: 'ja', label: '日本語', short: 'JA' },
+  { value: 'zh', label: '中文', short: 'ZH' },
 ];
 
 export function LanguageSwitcher() {

@@ -247,3 +247,54 @@ body{font-size:13px}.admin-table td,.toolbar input,.toolbar select,.admin-input,
 .upload-line { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 .upload-line input { max-width:280px; }
 .upload-line img { width:120px; max-height:54px; object-fit:contain; border:1px solid var(--border); border-radius:12px; background:var(--panel-soft); padding:6px; }
+
+.site-setting-checkbox { min-height:42px; display:flex; align-items:center; gap:10px; margin-top:24px; white-space:nowrap; }
+.site-setting-checkbox input { flex:0 0 auto; }
+.site-settings-grid .admin-textarea { min-height:120px; resize:vertical; }
+@media (max-width:720px){ .site-setting-checkbox { margin-top:4px; } }
+
+/* v15 Site Settings grouped cards */
+.site-settings-card{
+  padding:0;
+  overflow:hidden;
+  border:1px solid var(--border);
+  box-shadow:0 10px 28px rgba(15,23,42,.06);
+}
+.site-settings-section-header{
+  margin:0;
+  padding:20px 22px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel-soft) 72%,var(--panel)),var(--panel));
+}
+.settings-group-box{padding:20px 22px 22px;background:var(--panel)}
+.settings-provider-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  padding:20px 22px 22px;
+  background:var(--panel);
+}
+.settings-provider-card{
+  min-width:0;
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:var(--panel-soft);
+  overflow:hidden;
+  box-shadow:0 5px 16px rgba(15,23,42,.05);
+}
+.settings-provider-heading{
+  padding:15px 16px 13px;
+  border-bottom:1px solid var(--border);
+  background:color-mix(in srgb,var(--panel) 78%,var(--panel-soft));
+}
+.settings-provider-heading h3{margin:0;font-size:16px;color:var(--text)}
+.settings-provider-heading p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.45}
+.settings-provider-fields{padding:16px;grid-template-columns:1fr}
+.settings-provider-fields .span2{grid-column:auto}
+.settings-provider-fields .site-setting-checkbox{margin-top:0;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
+:root[data-theme='dark'] .site-settings-card{box-shadow:0 10px 28px rgba(0,0,0,.2)}
+:root[data-theme='dark'] .settings-provider-card{box-shadow:0 5px 16px rgba(0,0,0,.18)}
+@media(max-width:900px){.settings-provider-grid{grid-template-columns:1fr}}
+@media(max-width:720px){
+  .site-settings-section-header,.settings-group-box,.settings-provider-grid{padding-left:14px;padding-right:14px}
+}

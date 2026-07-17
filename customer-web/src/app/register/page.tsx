@@ -76,7 +76,7 @@ export default function Page() {
             <label>{t('lastName')} <b>*</b><input name="lastName" required placeholder={t('lastNamePlaceholder')} autoComplete="family-name" /></label>
           </div>
 
-          <label>{t('email')} <b>*</b><input name="email" required type="email" placeholder="you@example.com" autoComplete="email" /></label>
+          <label>{t('email')} <b>*</b><input name="email" required type="email" placeholder={t('emailPlaceholder')} autoComplete="email" /></label>
 
           <div className="auth-two-v2">
             <label>{t('password')} <b>*</b>

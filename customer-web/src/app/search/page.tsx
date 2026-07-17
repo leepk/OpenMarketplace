@@ -259,7 +259,7 @@ export default async function SearchPage({
           <Link href="/search?q=iphone">iPhone 15 Pro</Link>
           <Link href="/search?q=toyota">Toyota Camry</Link>
           <Link href="/search?q=macbook">MacBook Air</Link>
-          <Link href="/search?q=apartment">Apartment rentals</Link>
+          <Link href="/search?q=apartment"><T k="apartmentRentals" /></Link>
         </div>
         <AdvertisementCarousel placement="SIDEBAR" variant="rail" titleKey="featuredAds" />
         <div className="rail-panel safety-panel-v2">

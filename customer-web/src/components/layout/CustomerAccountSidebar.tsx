@@ -6,7 +6,7 @@ import { Icon } from '@/components/ui/Icon';
 import { CategoryBrowser } from '@/components/categories/CategoryBrowser';
 import { marketplaceApi, type CategoryDto } from '@/lib/api/apiClient';
 import { getSessionUser, type SessionUser } from '@/lib/api/session';
-import { mediaUrl } from '@/lib/media/url';
+import { avatarUrl } from '@/lib/media/avatar';
 import { useI18n } from '@/lib/i18n/client';
 
 type Counts = { saved: number; messages: number; notifications: number };
@@ -39,12 +39,12 @@ export function CustomerAccountSidebar({ categories }: { categories: CategoryDto
   }, [user?.id]);
 
   const initials = useMemo(() => (user?.name ?? 'Guest').split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase(), [user?.name]);
-  const avatarSrc = mediaUrl(user?.avatarUrl);
+  const avatarSrc = avatarUrl(user?.avatarUrl);
 
   return (
     <aside className="left-rail">
       <section className="profile-card-mini">
-        <div className="profile-avatar-modern">{user && avatarSrc ? <img src={avatarSrc} alt={user.name} /> : (user ? initials : <Icon name="user" size={24} />)}</div>
+        <div className="profile-avatar-modern">{user ? <img src={avatarSrc} alt={user.name} /> : <Icon name="user" size={24} />}</div>
         <div><strong>{user?.name ?? t('guest')}</strong><span>{user?.location ?? t('loginToSync')}</span>{user ? <Link href="/profile">{t('viewProfile')}</Link> : <Link href="/login">{t('loginCreate')}</Link>}</div>
       </section>
       <nav className="account-nav">

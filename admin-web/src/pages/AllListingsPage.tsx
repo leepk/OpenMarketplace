@@ -61,6 +61,7 @@ export function AllListingsPage() {
     },
     { key: 'category', header: 'Category', render: (x) => x.category?.name || x.categoryName || x.category || '-' },
     { key: 'seller', header: 'Seller', render: (x) => x.seller?.name || x.sellerName || x.seller || x.user?.name || '-' },
+    { key: 'expiresAt', header: 'Expired Date', render: (x) => { const d = x.expiresAt || x.packageEndsAt || x.expiredDate; return d ? new Date(d).toLocaleDateString() : '-'; } },
     { key: 'createdAt', header: 'Created', render: (x) => x.createdAt ? new Date(x.createdAt).toLocaleDateString() : '-' },
     { key: 'status', header: 'Status', render: (x) => <StatusBadge value={x.moderationStatus || x.status || 'Unknown'} /> },
     { key: 'actions', header: 'Actions', width: '118px', render: (x) => <div className="row-actions nowrap-actions"><AdminIconButton icon={isActiveListing(x) ? 'toggleOn' : 'toggleOff'} label={isActiveListing(x) ? 'Set inactive' : 'Set active'} className={isActiveListing(x) ? 'success-action' : 'danger-action'} onClick={() => toggleListing(x)} /><AdminIconButton icon="view" label="View listing" onClick={() => window.open(listingPublicUrl(x.id), '_blank')} /></div> },

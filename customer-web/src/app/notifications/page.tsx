@@ -97,7 +97,7 @@ export default function NotificationsPage(){
             <p>{n.body??''}</p>
             <small>{n.createdAt?new Date(n.createdAt).toLocaleString():''}</small>
           </div>
-          <button type="button" aria-label="Remove notification" onClick={(e)=>removeNotification(e,n)}>×</button>
+          <button type="button" aria-label={t('removeNotification')} onClick={(e)=>removeNotification(e,n)}>×</button>
         </Link>;
       })}
     </div>

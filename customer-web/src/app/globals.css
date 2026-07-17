@@ -1061,3 +1061,19 @@ select option:checked{background:var(--primary)!important;color:#fff!important;}
 .listing-row.is-premium .price{
   color:var(--secondary)!important;
 }
+
+.social-auth-stack{display:grid;gap:10px;margin:16px 0}.auth-social-provider-v2{display:flex;align-items:center;justify-content:center;min-height:46px;border:1px solid var(--border,#d8dee9);border-radius:12px;background:var(--surface,#fff);color:var(--text,#111827);font-weight:700;text-decoration:none}.auth-social-provider-v2:hover{border-color:var(--primary,#2563eb);color:var(--primary,#2563eb)}.auth-divider-v2{display:flex;align-items:center;gap:12px;color:#94a3b8;font-size:12px}.auth-divider-v2:before,.auth-divider-v2:after{content:"";height:1px;background:#e2e8f0;flex:1}
+
+.billing-payment-methods-v4{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:16px}.billing-payment-methods-v4 span{padding:8px 12px;border:1px solid var(--border,#d8dee9);border-radius:999px;font-weight:700}.billing-payment-methods-v4 small{width:100%;color:#64748b}
+
+/* Consistent customer default avatar */
+.avatar-chip img,.profile-avatar-modern img,.account-avatar-v3 img{width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit}
+
+.phone-verification-card-v3{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px;border:1px solid var(--border,#e5e7eb);border-radius:14px;background:var(--surface,#fff)}
+.phone-verification-card-v3 p{margin:4px 0 8px;color:var(--muted,#64748b);font-size:14px}
+.verification-status{display:inline-flex;padding:4px 9px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:12px;font-weight:700}
+.verification-status.verified{background:#dcfce7;color:#166534}
+.phone-verification-actions-v3{display:flex;flex-direction:column;align-items:flex-end;gap:10px;min-width:280px}
+.phone-code-line-v3{display:flex;gap:8px;width:100%}
+.phone-code-line-v3 input{min-width:0;flex:1}
+@media(max-width:700px){.phone-verification-card-v3{align-items:stretch;flex-direction:column}.phone-verification-actions-v3{align-items:stretch;min-width:0}.phone-code-line-v3{flex-direction:column}}

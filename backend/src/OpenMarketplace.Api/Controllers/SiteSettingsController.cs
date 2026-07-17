@@ -30,7 +30,51 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         ["moderation.ai_enabled"] = "Boolean",
         ["moderation.auto_approve_safe"] = "Boolean",
         ["moderation.review_threshold"] = "String",
-        ["moderation.reject_threshold"] = "String"
+        ["moderation.reject_threshold"] = "String",
+        ["auth.email_enabled"] = "Boolean",
+        ["auth.google_enabled"] = "Boolean",
+        ["auth.google_client_id"] = "String",
+        ["auth.google_client_secret"] = "Secret",
+        ["auth.facebook_enabled"] = "Boolean",
+        ["auth.facebook_app_id"] = "String",
+        ["auth.facebook_app_secret"] = "Secret",
+        ["auth.auto_create_user"] = "Boolean",
+        ["payment.default_provider"] = "String",
+        ["payment.currency"] = "String",
+        ["payment.stripe_enabled"] = "Boolean",
+        ["payment.stripe_publishable_key"] = "String",
+        ["payment.stripe_secret_key"] = "Secret",
+        ["payment.stripe_webhook_secret"] = "Secret",
+        ["payment.paypal_enabled"] = "Boolean",
+        ["payment.paypal_client_id"] = "String",
+        ["payment.paypal_secret"] = "Secret",
+        ["payment.paypal_mode"] = "String",
+        ["payment.manual_enabled"] = "Boolean",
+        ["payment.manual_instructions"] = "Text",
+        ["email.enabled"] = "Boolean",
+        ["email.provider"] = "String",
+        ["email.from_name"] = "String",
+        ["email.from_address"] = "Email",
+        ["email.smtp_host"] = "String",
+        ["email.smtp_port"] = "String",
+        ["email.smtp_username"] = "String",
+        ["email.smtp_password"] = "Secret",
+        ["email.smtp_use_ssl"] = "Boolean",
+        ["sms.enabled"] = "Boolean",
+        ["sms.provider"] = "String",
+        ["sms.account_sid"] = "String",
+        ["sms.auth_token"] = "Secret",
+        ["sms.from_number"] = "String",
+        ["template.email_welcome_subject"] = "String",
+        ["template.email_welcome_body"] = "Text",
+        ["template.email_verify_subject"] = "String",
+        ["template.email_verify_body"] = "Text",
+        ["template.email_password_reset_subject"] = "String",
+        ["template.email_password_reset_body"] = "Text",
+        ["template.email_payment_subject"] = "String",
+        ["template.email_payment_body"] = "Text",
+        ["template.sms_verification"] = "Text",
+        ["template.sms_payment"] = "Text"
     };
 
     [HttpGet("api/v1/site-settings")]
@@ -53,9 +97,9 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
     {
         await EnsureDefaultsAsync(ct);
         var rows = await db.AppSettings.AsNoTracking()
-            .Where(x => !x.IsDeleted && (x.Key.StartsWith("site.") || x.Key.StartsWith("social.") || x.Key.StartsWith("contact.") || x.Key.StartsWith("footer.") || x.Key.StartsWith("seo.") || x.Key.StartsWith("moderation.")))
+            .Where(x => !x.IsDeleted && (x.Key.StartsWith("site.") || x.Key.StartsWith("social.") || x.Key.StartsWith("contact.") || x.Key.StartsWith("footer.") || x.Key.StartsWith("seo.") || x.Key.StartsWith("moderation.") || x.Key.StartsWith("auth.") || x.Key.StartsWith("payment.") || x.Key.StartsWith("email.") || x.Key.StartsWith("sms.") || x.Key.StartsWith("template.")))
             .OrderBy(x => x.Key)
-            .Select(x => new { x.Id, x.Key, x.Value, x.ValueType, x.IsPublic, x.CreatedAt, x.UpdatedAt })
+            .Select(x => new { x.Id, x.Key, Value = x.ValueType == "Secret" && x.Value != "" ? "••••••••" : x.Value, x.ValueType, x.IsPublic, x.CreatedAt, x.UpdatedAt })
             .ToListAsync(ct);
         return Ok(ApiResponse<object>.Ok(new { items = rows, settings = ToDictionary(rows), branding = ToBranding(rows) }, HttpContext.TraceIdentifier));
     }
@@ -77,9 +121,11 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
                 setting = new AppSetting { Key = key, ValueType = DefaultTypes.GetValueOrDefault(key, "String"), IsPublic = !key.StartsWith("moderation.") };
                 db.AppSettings.Add(setting);
             }
-            setting.Value = item.Value?.Trim() ?? string.Empty;
+            var incoming = item.Value?.Trim() ?? string.Empty;
+            if (DefaultTypes.GetValueOrDefault(key) == "Secret" && (string.IsNullOrWhiteSpace(incoming) || incoming == "••••••••")) continue;
+            setting.Value = incoming;
             setting.ValueType = DefaultTypes.GetValueOrDefault(key, setting.ValueType);
-            setting.IsPublic = !key.StartsWith("moderation.");
+            setting.IsPublic = IsPublicKey(key);
             setting.UpdatedAt = DateTimeOffset.UtcNow;
         }
         db.AuditLogs.Add(new AuditLog { ActorId = request.AdminId, Action = "Site settings updated", EntityType = "SiteSettings", EntityId = Guid.Empty });
@@ -99,9 +145,12 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
             setting = new AppSetting { Key = key, ValueType = DefaultTypes.GetValueOrDefault(key, "String"), IsPublic = !key.StartsWith("moderation.") };
             db.AppSettings.Add(setting);
         }
-        setting.Value = request.Value?.Trim() ?? string.Empty;
+        var incoming = request.Value?.Trim() ?? string.Empty;
+        if (DefaultTypes.GetValueOrDefault(key) == "Secret" && (string.IsNullOrWhiteSpace(incoming) || incoming == "••••••••"))
+            return Ok(ApiResponse<object>.Ok(new { setting }, HttpContext.TraceIdentifier));
+        setting.Value = incoming;
         setting.ValueType = DefaultTypes.GetValueOrDefault(key, setting.ValueType);
-        setting.IsPublic = !key.StartsWith("moderation.");
+        setting.IsPublic = IsPublicKey(key);
         setting.UpdatedAt = DateTimeOffset.UtcNow;
         db.AuditLogs.Add(new AuditLog { ActorId = request.AdminId, Action = $"Site setting updated: {key}", EntityType = "SiteSettings", EntityId = setting.Id });
         await db.SaveChangesAsync(ct);
@@ -115,7 +164,7 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         var existing = await db.AppSettings.Where(x => keys.Contains(x.Key)).Select(x => x.Key).ToListAsync(ct);
         foreach (var row in defaults.Where(x => !existing.Contains(x.Key)))
         {
-            db.AppSettings.Add(new AppSetting { Key = row.Key, Value = row.Value, ValueType = row.ValueType, IsPublic = !row.Key.StartsWith("moderation.") });
+            db.AppSettings.Add(new AppSetting { Key = row.Key, Value = row.Value, ValueType = row.ValueType, IsPublic = IsPublicKey(row.Key) });
         }
         if (db.ChangeTracker.HasChanges()) await db.SaveChangesAsync(ct);
     }
@@ -139,11 +188,56 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         ("moderation.ai_enabled", "true", "Boolean"),
         ("moderation.auto_approve_safe", "true", "Boolean"),
         ("moderation.review_threshold", "0.45", "String"),
-        ("moderation.reject_threshold", "0.85", "String")
+        ("moderation.reject_threshold", "0.85", "String"),
+        ("auth.email_enabled", "true", "Boolean"),
+        ("auth.google_enabled", "false", "Boolean"),
+        ("auth.google_client_id", "", "String"),
+        ("auth.google_client_secret", "", "Secret"),
+        ("auth.facebook_enabled", "false", "Boolean"),
+        ("auth.facebook_app_id", "", "String"),
+        ("auth.facebook_app_secret", "", "Secret"),
+        ("auth.auto_create_user", "true", "Boolean"),
+        ("payment.default_provider", "MANUAL", "String"),
+        ("payment.currency", "USD", "String"),
+        ("payment.stripe_enabled", "false", "Boolean"),
+        ("payment.stripe_publishable_key", "", "String"),
+        ("payment.stripe_secret_key", "", "Secret"),
+        ("payment.stripe_webhook_secret", "", "Secret"),
+        ("payment.paypal_enabled", "false", "Boolean"),
+        ("payment.paypal_client_id", "", "String"),
+        ("payment.paypal_secret", "", "Secret"),
+        ("payment.paypal_mode", "Sandbox", "String"),
+        ("payment.manual_enabled", "true", "Boolean"),
+        ("payment.manual_instructions", "Contact support to complete payment.", "Text"),
+        ("email.enabled", "false", "Boolean"),
+        ("email.provider", "SMTP", "String"),
+        ("email.from_name", "Vunoca", "String"),
+        ("email.from_address", "no-reply@vunoca.com", "Email"),
+        ("email.smtp_host", "", "String"),
+        ("email.smtp_port", "587", "String"),
+        ("email.smtp_username", "", "String"),
+        ("email.smtp_password", "", "Secret"),
+        ("email.smtp_use_ssl", "true", "Boolean"),
+        ("sms.enabled", "false", "Boolean"),
+        ("sms.provider", "Twilio", "String"),
+        ("sms.account_sid", "", "String"),
+        ("sms.auth_token", "", "Secret"),
+        ("sms.from_number", "", "String"),
+        ("template.email_welcome_subject", "Welcome to {{siteName}}", "String"),
+        ("template.email_welcome_body", "Hello {{userName}}, welcome to {{siteName}}.", "Text"),
+        ("template.email_verify_subject", "Verify your {{siteName}} account", "String"),
+        ("template.email_verify_body", "Hello {{userName}}, verify your email here: {{verificationUrl}}", "Text"),
+        ("template.email_password_reset_subject", "Reset your {{siteName}} password", "String"),
+        ("template.email_password_reset_body", "Hello {{userName}}, reset your password here: {{resetUrl}}. This link expires in {{expiresMinutes}} minutes.", "Text"),
+        ("template.email_payment_subject", "Payment received - {{orderNumber}}", "String"),
+        ("template.email_payment_body", "We received {{amount}} for order {{orderNumber}}.", "Text"),
+        ("template.sms_verification", "{{siteName}} verification code: {{code}}", "Text"),
+        ("template.sms_payment", "Payment {{amount}} received for {{orderNumber}}.", "Text")
     ];
 
     private static string NormalizeKey(string key) => (key ?? string.Empty).Trim().ToLowerInvariant().Replace('-', '_');
     private static bool IsAllowedKey(string key) => DefaultTypes.ContainsKey(key);
+    private static bool IsPublicKey(string key) => key.StartsWith("site.") || key.StartsWith("social.") || key.StartsWith("contact.") || key.StartsWith("footer.") || key.StartsWith("seo.") || key is "auth.email_enabled" or "auth.google_enabled" or "auth.google_client_id" or "auth.facebook_enabled" or "auth.facebook_app_id" or "auth.auto_create_user" or "payment.default_provider" or "payment.currency" or "payment.stripe_enabled" or "payment.stripe_publishable_key" or "payment.paypal_enabled" or "payment.paypal_client_id" or "payment.paypal_mode" or "payment.manual_enabled" or "payment.manual_instructions";
     private static Dictionary<string, string> ToDictionary(IEnumerable<dynamic> rows) => rows.ToDictionary(x => (string)x.Key, x => (string)(x.Value ?? string.Empty));
     private static object ToResponse(IEnumerable<dynamic> rows) => new { settings = ToDictionary(rows), branding = ToBranding(rows) };
     private static object ToBranding(IEnumerable<dynamic> rows)

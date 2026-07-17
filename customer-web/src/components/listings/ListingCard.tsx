@@ -75,11 +75,11 @@ function packageIsActive(listing: ListingCardData) {
 }
 
 function ListingImage({ listing }: { listing: ListingCardData }) {
-  const { t, packageLabel } = useI18n();
+  const { t, packageLabel, category } = useI18n();
   const pkg = packageCode(listing);
   const activePkg = packageIsActive(listing);
   const src = firstImage(listing);
-  const fallbackLabel = listing.categoryName ?? t('featuredListings');
+  const fallbackLabel = category(listing.categoryCode ?? listing.categoryName) || t('featuredListings');
   return (
     <div className={`listing-image image-${artKind(listing)}`}>
       <div className="generated-art"><span>{fallbackLabel}</span></div>

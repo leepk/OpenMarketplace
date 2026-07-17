@@ -5,6 +5,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Net;
+using System.Net.Mail;
+using System.Net.Http.Headers;
 using OpenMarketplace.Domain.Users;
 using OpenMarketplace.Infrastructure.Persistence;
 using OpenMarketplace.Shared.Api;
@@ -108,6 +111,142 @@ public sealed class AuthController(AppDbContext db, IConfiguration config) : Con
         }, HttpContext.TraceIdentifier));
     }
 
+
+    [HttpPost("send-phone-verification")]
+    public async Task<ActionResult<ApiResponse<object>>> SendPhoneVerification(SendPhoneVerificationRequest request, CancellationToken ct)
+    {
+        if (request.UserId == Guid.Empty)
+            return Unauthorized(ApiResponse<object>.Fail("Unauthorized", "Please login first.", HttpContext.TraceIdentifier));
+
+        var user = await db.UserProfiles.FirstOrDefaultAsync(x => x.Id == request.UserId && !x.IsDeleted, ct);
+        if (user is null)
+            return NotFound(ApiResponse<object>.Fail("NotFound", "User not found.", HttpContext.TraceIdentifier));
+        if (string.IsNullOrWhiteSpace(user.Phone))
+            return BadRequest(ApiResponse<object>.Fail("PhoneRequired", "Add a phone number to your profile first.", HttpContext.TraceIdentifier));
+        if (user.PhoneVerified)
+            return Ok(ApiResponse<object>.Ok(new { message = "Phone number is already verified.", alreadyVerified = true }, HttpContext.TraceIdentifier));
+
+        var settings = await db.AppSettings.AsNoTracking()
+            .Where(x => !x.IsDeleted && (x.Key.StartsWith("sms.") || x.Key.StartsWith("otp.") || x.Key == "template.sms_verification" || x.Key == "site.name"))
+            .ToDictionaryAsync(x => x.Key, x => x.Value, ct);
+        string Get(string key, string fallback = "") => settings.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : fallback;
+        if (!bool.TryParse(Get("sms.enabled", "false"), out var smsEnabled) || !smsEnabled)
+            return BadRequest(ApiResponse<object>.Fail("SmsDisabled", "SMS verification is not enabled. Please contact support.", HttpContext.TraceIdentifier));
+
+        var resendSeconds = int.TryParse(Get("otp.resend_seconds", "60"), out var rs) ? Math.Clamp(rs, 30, 600) : 60;
+        if (user.PhoneVerificationSentAt.HasValue && user.PhoneVerificationSentAt.Value.AddSeconds(resendSeconds) > DateTimeOffset.UtcNow)
+        {
+            var retryAfter = (int)Math.Ceiling((user.PhoneVerificationSentAt.Value.AddSeconds(resendSeconds) - DateTimeOffset.UtcNow).TotalSeconds);
+            return StatusCode(StatusCodes.Status429TooManyRequests, ApiResponse<object>.Fail("TooManyRequests", $"Please wait {retryAfter} seconds before requesting another code.", HttpContext.TraceIdentifier));
+        }
+
+        var length = int.TryParse(Get("otp.length", "6"), out var len) ? Math.Clamp(len, 4, 8) : 6;
+        var expiresMinutes = int.TryParse(Get("otp.expires_minutes", "5"), out var em) ? Math.Clamp(em, 1, 30) : 5;
+        var max = (int)Math.Pow(10, length);
+        var code = RandomNumberGenerator.GetInt32(max / 10, max).ToString();
+        user.PhoneVerificationCodeHash = Sha256(code);
+        user.PhoneVerificationExpiresAt = DateTimeOffset.UtcNow.AddMinutes(expiresMinutes);
+        user.PhoneVerificationSentAt = DateTimeOffset.UtcNow;
+        user.PhoneVerificationAttempts = 0;
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(ct);
+
+        try
+        {
+            await SendVerificationSmsAsync(user.Phone, code, expiresMinutes, settings, ct);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, ApiResponse<object>.Fail("SmsDeliveryFailed", $"Unable to send verification SMS: {ex.Message}", HttpContext.TraceIdentifier));
+        }
+
+        return Ok(ApiResponse<object>.Ok(new { message = "Verification code sent.", expiresInMinutes = expiresMinutes, resendAfterSeconds = resendSeconds }, HttpContext.TraceIdentifier));
+    }
+
+    [HttpPost("verify-phone")]
+    public async Task<ActionResult<ApiResponse<object>>> VerifyPhone(VerifyPhoneRequest request, CancellationToken ct)
+    {
+        if (request.UserId == Guid.Empty)
+            return Unauthorized(ApiResponse<object>.Fail("Unauthorized", "Please login first.", HttpContext.TraceIdentifier));
+        var user = await db.UserProfiles.FirstOrDefaultAsync(x => x.Id == request.UserId && !x.IsDeleted, ct);
+        if (user is null)
+            return NotFound(ApiResponse<object>.Fail("NotFound", "User not found.", HttpContext.TraceIdentifier));
+        if (user.PhoneVerified)
+            return Ok(ApiResponse<object>.Ok(new { user = ToSafeUser(user), message = "Phone number is already verified." }, HttpContext.TraceIdentifier));
+
+        var settings = await db.AppSettings.AsNoTracking().Where(x => !x.IsDeleted && x.Key.StartsWith("otp.")).ToDictionaryAsync(x => x.Key, x => x.Value, ct);
+        var maxAttempts = settings.TryGetValue("otp.max_attempts", out var ma) && int.TryParse(ma, out var parsed) ? Math.Clamp(parsed, 3, 10) : 5;
+        if (user.PhoneVerificationAttempts >= maxAttempts)
+            return BadRequest(ApiResponse<object>.Fail("TooManyAttempts", "Too many invalid attempts. Request a new verification code.", HttpContext.TraceIdentifier));
+        if (string.IsNullOrWhiteSpace(user.PhoneVerificationCodeHash) || user.PhoneVerificationExpiresAt is null || user.PhoneVerificationExpiresAt <= DateTimeOffset.UtcNow)
+            return BadRequest(ApiResponse<object>.Fail("CodeExpired", "The verification code is invalid or expired. Request a new code.", HttpContext.TraceIdentifier));
+
+        user.PhoneVerificationAttempts++;
+        if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(user.PhoneVerificationCodeHash), Encoding.UTF8.GetBytes(Sha256((request.Code ?? string.Empty).Trim()))))
+        {
+            await db.SaveChangesAsync(ct);
+            return BadRequest(ApiResponse<object>.Fail("InvalidCode", "The verification code is incorrect.", HttpContext.TraceIdentifier));
+        }
+
+        user.PhoneVerified = true;
+        user.PhoneVerificationCodeHash = string.Empty;
+        user.PhoneVerificationExpiresAt = null;
+        user.PhoneVerificationSentAt = null;
+        user.PhoneVerificationAttempts = 0;
+        user.TrustScore = Math.Min(100, user.TrustScore + 10);
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(ct);
+        return Ok(ApiResponse<object>.Ok(new { user = ToSafeUser(user), message = "Phone number verified successfully." }, HttpContext.TraceIdentifier));
+    }
+
+
+    [HttpPost("forgot-password")]
+    public async Task<ActionResult<ApiResponse<object>>> ForgotPassword(ForgotPasswordRequest request, CancellationToken ct)
+    {
+        var email = (request.Email ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+            return Ok(ApiResponse<object>.Ok(new { message = "If the email exists, a reset link will be sent." }, HttpContext.TraceIdentifier));
+
+        var user = await db.UserProfiles.FirstOrDefaultAsync(x => x.Email == email && !x.IsDeleted, ct);
+        if (user is not null)
+        {
+            var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+            user.PasswordResetTokenHash = Sha256(rawToken);
+            user.PasswordResetExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30);
+            user.UpdatedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync(ct);
+
+            var settings = await db.AppSettings.AsNoTracking()
+                .Where(x => !x.IsDeleted && (x.Key.StartsWith("email.") || x.Key.StartsWith("template.email_password_reset") || x.Key == "site.name"))
+                .ToDictionaryAsync(x => x.Key, x => x.Value, ct);
+            var customerBaseUrl = (config["CustomerApp:BaseUrl"] ?? config["Frontend:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
+            var resetUrl = $"{customerBaseUrl}/reset-password?token={Uri.EscapeDataString(rawToken)}&email={Uri.EscapeDataString(email)}";
+            await TrySendPasswordResetEmailAsync(user, resetUrl, settings, ct);
+        }
+
+        return Ok(ApiResponse<object>.Ok(new { message = "If the email exists, a reset link will be sent." }, HttpContext.TraceIdentifier));
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<ActionResult<ApiResponse<object>>> ResetPassword(ResetPasswordRequest request, CancellationToken ct)
+    {
+        var email = (request.Email ?? string.Empty).Trim().ToLowerInvariant();
+        var tokenHash = Sha256(request.Token ?? string.Empty);
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+            return BadRequest(ApiResponse<object>.Fail("Validation", "Email, valid reset token, and a password of at least 6 characters are required.", HttpContext.TraceIdentifier));
+
+        var user = await db.UserProfiles.FirstOrDefaultAsync(x => x.Email == email && x.PasswordResetTokenHash == tokenHash && !x.IsDeleted, ct);
+        if (user is null || user.PasswordResetExpiresAt is null || user.PasswordResetExpiresAt <= DateTimeOffset.UtcNow)
+            return BadRequest(ApiResponse<object>.Fail("InvalidResetToken", "The password reset link is invalid or expired.", HttpContext.TraceIdentifier));
+
+        user.PasswordHash = HashPassword(request.NewPassword);
+        user.PasswordResetTokenHash = string.Empty;
+        user.PasswordResetExpiresAt = null;
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(ct);
+        return Ok(ApiResponse<object>.Ok(new { message = "Password reset successfully." }, HttpContext.TraceIdentifier));
+    }
+
     internal static string HashPassword(string password)
     {
         var salt = RandomNumberGenerator.GetBytes(16);
@@ -160,6 +299,83 @@ public sealed class AuthController(AppDbContext db, IConfiguration config) : Con
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+
+    private static string Sha256(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
+
+    private static async Task TrySendPasswordResetEmailAsync(UserProfile user, string resetUrl, Dictionary<string, string> settings, CancellationToken ct)
+    {
+        string Get(string key, string fallback = "") => settings.TryGetValue(key, out var value) ? value : fallback;
+        if (!bool.TryParse(Get("email.enabled"), out var enabled) || !enabled) return;
+        if (!string.Equals(Get("email.provider", "SMTP"), "SMTP", StringComparison.OrdinalIgnoreCase)) return;
+        var host = Get("email.smtp_host");
+        if (string.IsNullOrWhiteSpace(host)) return;
+
+        var siteName = Get("site.name", "Vunoca");
+        var subject = Get("template.email_password_reset_subject", "Reset your {{siteName}} password")
+            .Replace("{{siteName}}", siteName);
+        var body = Get("template.email_password_reset_body", "Hello {{userName}}, reset your password here: {{resetUrl}}")
+            .Replace("{{siteName}}", siteName)
+            .Replace("{{userName}}", user.Name)
+            .Replace("{{resetUrl}}", resetUrl)
+            .Replace("{{expiresMinutes}}", "30");
+
+        using var message = new MailMessage();
+        message.From = new MailAddress(Get("email.from_address", "no-reply@vunoca.com"), Get("email.from_name", siteName));
+        message.To.Add(user.Email);
+        message.Subject = subject;
+        message.Body = body;
+        message.IsBodyHtml = body.Contains('<');
+
+        using var smtp = new SmtpClient(host);
+        smtp.Port = int.TryParse(Get("email.smtp_port", "587"), out var port) ? port : 587;
+        smtp.EnableSsl = bool.TryParse(Get("email.smtp_use_ssl", "true"), out var ssl) && ssl;
+        var username = Get("email.smtp_username");
+        if (!string.IsNullOrWhiteSpace(username)) smtp.Credentials = new NetworkCredential(username, Get("email.smtp_password"));
+        await smtp.SendMailAsync(message, ct);
+    }
+
+
+    private static async Task SendVerificationSmsAsync(string phone, string code, int expiresMinutes, IReadOnlyDictionary<string, string> settings, CancellationToken ct)
+    {
+        string Get(string key, string fallback = "") => settings.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : fallback;
+        var siteName = Get("site.name", "Vunoca");
+        var body = Get("template.sms_verification", "{{siteName}} verification code: {{code}}. Expires in {{expiresMinutes}} minutes.")
+            .Replace("{{siteName}}", siteName)
+            .Replace("{{code}}", code)
+            .Replace("{{expiresMinutes}}", expiresMinutes.ToString());
+        var provider = Get("sms.provider", "Twilio");
+
+        using var http = new HttpClient();
+        if (provider.Equals("Twilio", StringComparison.OrdinalIgnoreCase))
+        {
+            var sid = Get("sms.account_sid");
+            var token = Get("sms.auth_token");
+            var from = Get("sms.from_number");
+            if (string.IsNullOrWhiteSpace(sid) || string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(from))
+                throw new InvalidOperationException("Twilio SMS settings are incomplete.");
+            http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"{sid}:{token}")));
+            using var content = new FormUrlEncodedContent(new Dictionary<string, string> { ["To"] = phone, ["From"] = from, ["Body"] = body });
+            using var response = await http.PostAsync($"https://api.twilio.com/2010-04-01/Accounts/{Uri.EscapeDataString(sid)}/Messages.json", content, ct);
+            if (!response.IsSuccessStatusCode) throw new InvalidOperationException($"Twilio returned {(int)response.StatusCode}.");
+            return;
+        }
+
+        if (provider.Equals("Vonage", StringComparison.OrdinalIgnoreCase))
+        {
+            var key = Get("sms.account_sid");
+            var secret = Get("sms.auth_token");
+            var from = Get("sms.from_number", siteName);
+            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(secret))
+                throw new InvalidOperationException("Vonage SMS settings are incomplete.");
+            using var content = new FormUrlEncodedContent(new Dictionary<string, string> { ["api_key"] = key, ["api_secret"] = secret, ["to"] = phone.TrimStart('+'), ["from"] = from, ["text"] = body });
+            using var response = await http.PostAsync("https://rest.nexmo.com/sms/json", content, ct);
+            if (!response.IsSuccessStatusCode) throw new InvalidOperationException($"Vonage returned {(int)response.StatusCode}.");
+            return;
+        }
+
+        throw new InvalidOperationException("The selected SMS provider is not supported for automatic delivery.");
+    }
+
     private static bool IsAdminRole(string? role) => role is "Admin" or "SuperAdmin" or "System" or "Moderator" or "Support";
 
     internal static string GetJwtSecret(IConfiguration config)
@@ -184,3 +400,7 @@ public sealed class AuthController(AppDbContext db, IConfiguration config) : Con
 public sealed record RegisterRequest(string Name, string Email, string? Phone, string? Location, string Password);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record AdminLoginRequest(string Email, string Password, bool RememberMe = false);
+public sealed record ForgotPasswordRequest(string Email);
+public sealed record ResetPasswordRequest(string Email, string Token, string NewPassword);
+public sealed record SendPhoneVerificationRequest(Guid UserId);
+public sealed record VerifyPhoneRequest(Guid UserId, string Code);

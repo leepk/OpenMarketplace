@@ -87,6 +87,7 @@ export function ListingReviewPage() {
     },
     { key: 'category', header: 'Category', render: (x) => x.category?.name || x.categoryName || x.category || '-' },
     { key: 'seller', header: 'Seller', render: (x) => x.seller?.name || x.sellerName || x.seller || x.user?.name || '-' },
+    { key: 'expiresAt', header: 'Expired Date', render: (x) => { const d = x.expiresAt || x.packageEndsAt || x.expiredDate; return d ? new Date(d).toLocaleDateString() : '-'; } },
     { key: 'submitted', header: 'Submitted', render: (x) => x.createdAt ? new Date(x.createdAt).toLocaleString() : '-' },
     { key: 'status', header: 'Status', render: (x) => <StatusBadge value={rowStatus(x)} /> },
     {

@@ -119,4 +119,6 @@ export const marketplaceApi = {
   checkout: (payload: { userId: string; listingId?: string; packageId?: string; packageCode?: string; amount: number; paymentMethod?: string; paymentToken?: string; providerCode?: string; providerStatus?: string; providerPayload?: string }) => apiClient.post<any>('/billing/checkout', payload),
   me: (userId: string) => apiClient.get<any>(`/users/me?userId=${userId}`),
   saveMe: (userId: string, payload: any) => apiClient.put<any>(`/users/me?userId=${userId}`, payload),
+  sendPhoneVerification: (userId: string) => apiClient.post<any>('/auth/send-phone-verification', { userId }),
+  verifyPhone: (userId: string, code: string) => apiClient.post<any>('/auth/verify-phone', { userId, code }),
 };

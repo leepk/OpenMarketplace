@@ -15,7 +15,7 @@ export function SiteHeader() {
   return (
     <header className="app-header">
       <div className="app-header-inner shell-wide">
-        <Link href="/" className="logo-lockup" aria-label={`${siteName} home`}>
+        <Link href="/" className="logo-lockup" aria-label={`${siteName} ${t('home')}`}>
           <span className="logo-pin">{logo ? <img src={logo} alt="" /> : <Icon name="logo" size={25} />}</span>
           <span>{siteName}</span>
         </Link>
@@ -23,7 +23,7 @@ export function SiteHeader() {
           <Icon name="search" size={18} />
           <input name="q" placeholder={t('searchPlaceholder')} />
         </form>
-        <select className="header-control" defaultValue="all" aria-label="Category">
+        <select className="header-control" defaultValue="all" aria-label={t('category')}>
           <option value="all">{t('allCategories')}</option>
           <option value="vehicles">{t('vehicles')}</option>
           <option value="property-rentals">{t('propertyRentals')}</option>
@@ -32,7 +32,7 @@ export function SiteHeader() {
           <option value="services">{t('services')}</option>
           <option value="electronics">{t('electronics')}</option>
         </select>
-        <select className="header-control location" defaultValue="San Jose, CA" aria-label="Location">
+        <select className="header-control location" defaultValue="San Jose, CA" aria-label={t('location')}>
           <option>San Jose, CA</option><option>Santa Clara, CA</option><option>Sunnyvale, CA</option><option>Milpitas, CA</option>
         </select>
         <LanguageSwitcher />

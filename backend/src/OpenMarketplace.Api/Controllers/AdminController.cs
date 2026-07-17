@@ -43,7 +43,21 @@ public sealed class AdminController(AppDbContext db) : ControllerBase
             query = query.Where(x => x.Title.ToLower().Contains(term) || x.Description.ToLower().Contains(term) || x.City.ToLower().Contains(term) || x.State.ToLower().Contains(term));
         }
         var total = await query.CountAsync(ct);
-        var items = await query.OrderByDescending(x=>x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        var listings = await query.OrderByDescending(x=>x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        var sellerIds = listings.Select(x => x.SellerId).Distinct().ToList();
+        var categoryIds = listings.Select(x => x.CategoryId).Distinct().ToList();
+        var listingIds = listings.Select(x => x.Id).ToList();
+        var sellers = await db.UserProfiles.AsNoTracking().Where(x => sellerIds.Contains(x.Id)).Select(x => new { x.Id, x.Name, x.Email }).ToDictionaryAsync(x => x.Id, ct);
+        var categories = await db.Categories.AsNoTracking().Where(x => categoryIds.Contains(x.Id)).Select(x => new { x.Id, x.Name, x.Code }).ToDictionaryAsync(x => x.Id, ct);
+        var media = await db.MediaAssets.AsNoTracking().Where(x => x.ListingId != null && listingIds.Contains(x.ListingId.Value) && !x.IsDeleted).OrderBy(x => x.CreatedAt).Select(x => new { ListingId = x.ListingId!.Value, x.Url }).ToListAsync(ct);
+        var images = media.GroupBy(x => x.ListingId).ToDictionary(x => x.Key, x => x.First().Url);
+        var items = listings.Select(x =>
+        {
+            sellers.TryGetValue(x.SellerId, out var seller);
+            categories.TryGetValue(x.CategoryId, out var category);
+            images.TryGetValue(x.Id, out var imageUrl);
+            return new { x.Id, x.Title, x.Price, x.Currency, x.Status, x.ModerationStatus, x.City, x.State, x.CreatedAt, x.PublishedAt, x.ExpiresAt, Seller = seller, Category = category, ImageUrl = imageUrl ?? "" };
+        });
         return Ok(ApiResponse<object>.Ok(new{items,total,page,pageSize},HttpContext.TraceIdentifier));
     }
 

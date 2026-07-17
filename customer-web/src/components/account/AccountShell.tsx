@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Icon } from '@/components/ui/Icon';
 import type { SessionUser } from '@/lib/api/session';
 import { useI18n } from '@/lib/i18n/client';
+import { avatarUrl } from '@/lib/media/avatar';
 
 const nav = [
   { href: '/profile', icon: 'user', key: 'viewProfileTitle' },
@@ -18,12 +19,12 @@ const nav = [
 export function AccountShell({ user, title, subtitle, action, children }: { user: SessionUser; title: string; subtitle: string; action?: React.ReactNode; children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useI18n();
-  const initials = user.name.split(' ').map(x => x[0]).join('').slice(0,2).toUpperCase();
+  const avatarSrc = avatarUrl(user.avatarUrl);
   return (
     <section className="account-page-v3 shell-wide">
       <aside className="account-left-v3">
         <div className="account-profile-card-v3">
-          <div className="account-avatar-v3">{initials}</div>
+          <div className="account-avatar-v3"><img src={avatarSrc} alt={user.name} /></div>
           <strong>{user.name}</strong>
           <span>{user.email ?? t('customerAccount')}</span>
           <Link href="/profile">{t('viewPublicProfile')}</Link>

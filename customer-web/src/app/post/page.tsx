@@ -47,9 +47,9 @@ function packagePriceNumber(pkg?: PackageDto | null) {
   return Number(pkg?.price ?? 0) || 0;
 }
 
-function packagePrice(pkg: PackageDto) {
+function packagePrice(pkg: PackageDto, freeLabel = 'Free') {
   const value = packagePriceNumber(pkg);
-  return value > 0 ? `$${value.toFixed(value % 1 === 0 ? 0 : 2)}` : 'Free';
+  return value > 0 ? `$${value.toFixed(value % 1 === 0 ? 0 : 2)}` : freeLabel;
 }
 
 function packageDurationDays(pkg?: PackageDto | null) {
@@ -57,11 +57,11 @@ function packageDurationDays(pkg?: PackageDto | null) {
   return Number.isFinite(raw) && raw > 0 ? Math.ceil(raw) : 0;
 }
 
-function packageDurationText(pkg?: PackageDto | null) {
+function packageDurationText(pkg: PackageDto | null | undefined, t?: (key: string) => string) {
   const days = packageDurationDays(pkg);
-  if (!days) return 'No expiration set';
-  if (days === 1) return '1 day listing';
-  return `${days} days listing`;
+  if (!days) return t ? t('noExpirationSet') : 'No expiration set';
+  if (days === 1) return t ? t('oneDayListing') : '1 day listing';
+  return `${days} ${t ? t('daysListing') : 'days listing'}`;
 }
 
 function packageFeatures(pkg: PackageDto) {
@@ -397,29 +397,29 @@ export default function PostListingPage() {
                 <label>{t('contactPreference')}<select value={form.contactPreference} onChange={(e)=>update('contactPreference', e.target.value)}><option value="Message in app">{t('messageInApp')}</option><option value="Phone">{t('phone')}</option><option value="Email">{t('email')}</option></select></label>
               </div>
               <div className="listing-location-picker-v2">
-                <div className="location-picker-head-v2"><div><span>Listing location</span><h3>Show buyers where this item is available</h3></div><button type="button" className="secondary-button" onClick={useCurrentLocation}>Use current location</button></div>
+                <div className="location-picker-head-v2"><div><span>{t('listingLocation')}</span><h3>{t('showBuyersLocation')}</h3></div><button type="button" className="secondary-button" onClick={useCurrentLocation}>{t('useCurrentLocation')}</button></div>
                 <div className="post-grid-v2 compact">
-                  <label className="full">Address or pickup area<input value={form.addressLine} onChange={(e)=>update('addressLine', e.target.value)} placeholder="Street, cross street, mall, or pickup area" /></label>
-                  <label>City *<input value={form.city} onChange={(e)=>{ update('city', e.target.value); update('location', buildLocationLabel(e.target.value, form.state, form.postalCode, form.location)); }} required /></label>
-                  <label>State<input value={form.state} onChange={(e)=>{ update('state', e.target.value); update('location', buildLocationLabel(form.city, e.target.value, form.postalCode, form.location)); }} /></label>
+                  <label className="full">{t('addressPickupArea')}<input value={form.addressLine} onChange={(e)=>update('addressLine', e.target.value)} placeholder={t('addressPickupPlaceholder')} /></label>
+                  <label>{t('city')} *<input value={form.city} onChange={(e)=>{ update('city', e.target.value); update('location', buildLocationLabel(e.target.value, form.state, form.postalCode, form.location)); }} required /></label>
+                  <label>{t('state')}<input value={form.state} onChange={(e)=>{ update('state', e.target.value); update('location', buildLocationLabel(form.city, e.target.value, form.postalCode, form.location)); }} /></label>
                   <label>ZIP<input value={form.postalCode} onChange={(e)=>{ update('postalCode', e.target.value); update('location', buildLocationLabel(form.city, form.state, e.target.value, form.location)); }} /></label>
-                  <label>Country<input value={form.country} onChange={(e)=>update('country', e.target.value)} /></label>
+                  <label>{t('country')}<input value={form.country} onChange={(e)=>update('country', e.target.value)} /></label>
                 </div>
                 <div className="location-tools-v2">
-                  <button type="button" className="secondary-button" onClick={geocodeLocation}>Find on map</button>
-                  <label className="location-hide-toggle-v2"><input type="checkbox" checked={form.hideExactLocation} onChange={(e)=>setForm(current => ({ ...current, hideExactLocation: e.target.checked, locationPrecision: e.target.checked ? 'ApproximateCity' : 'Exact' }))} /> Hide exact address from public listing</label>
+                  <button type="button" className="secondary-button" onClick={geocodeLocation}>{t('findOnMap')}</button>
+                  <label className="location-hide-toggle-v2"><input type="checkbox" checked={form.hideExactLocation} onChange={(e)=>setForm(current => ({ ...current, hideExactLocation: e.target.checked, locationPrecision: e.target.checked ? 'ApproximateCity' : 'Exact' }))} /> {t('hideExactAddress')}</label>
                 </div>
                 <div className="location-map-preview-v2">
-                  <div className="location-map-grid-v2" aria-label="Location map preview">
-                    <button type="button" className="location-pin-v2" title="Listing pin">📍</button>
+                  <div className="location-map-grid-v2" aria-label={t('locationMapPreview')}>
+                    <button type="button" className="location-pin-v2" title={t('listingPin')}>📍</button>
                     <div className="location-road-v2 one" /><div className="location-road-v2 two" /><div className="location-road-v2 three" />
                   </div>
                   <div className="location-map-side-v2">
                     <strong>{publicLocation || 'Location not set'}</strong>
                     <span>{hasCoordinates ? `${latitudeNumber.toFixed(5)}, ${longitudeNumber.toFixed(5)}` : 'No coordinates yet'}</span>
-                    <small>Pin source: {form.locationSource}. Public precision: {form.hideExactLocation ? 'City/area only' : 'Exact address'}.</small>
+                    <small>{t('pinSource')}: {form.locationSource}. {t('publicPrecision')}: {form.hideExactLocation ? t('cityAreaOnly') : t('exactAddress')}.</small>
                     <div className="pin-nudge-v2"><button type="button" onClick={() => nudgePin(0.001, 0)}>↑</button><button type="button" onClick={() => nudgePin(0, -0.001)}>←</button><button type="button" onClick={() => nudgePin(0, 0.001)}>→</button><button type="button" onClick={() => nudgePin(-0.001, 0)}>↓</button></div>
-                    <a href={directionUrl} target="_blank" rel="noreferrer">Preview directions</a>
+                    <a href={directionUrl} target="_blank" rel="noreferrer">{t('previewDirections')}</a>
                   </div>
                 </div>
               </div>
@@ -435,7 +435,7 @@ export default function PostListingPage() {
                     return <button key={pkg.id ?? code} type="button" className={`package-card-v2 ${active ? 'active' : ''}`} onClick={() => update('packageCode', code)}>
                       {packageBadgeText(pkg) ? <em>{packageBadgeText(pkg)}</em> : code === 'FREE' ? <em className="soft">{t('starter')}</em> : null}
                       <strong>{packageDisplayName(pkg)}</strong>
-                      <div className="package-price-row-v2"><b>{packagePrice(pkg)}</b><small>{packageDurationText(pkg)}</small></div>
+                      <div className="package-price-row-v2"><b>{packagePrice(pkg, t('free'))}</b><small>{packageDurationText(pkg)}</small></div>
                       <p>{packageDescription(pkg)}</p>
                       <ul>{packageFeatureList(pkg).slice(0, 4).map((feature) => <li key={feature}><Icon name="check" size={14} />{feature}</li>)}</ul>
                       <span>{active ? t('selected') : t('choosePackage')}</span>
@@ -450,8 +450,8 @@ export default function PostListingPage() {
                 <span>{t('checkout')}</span>
                 <h3>{packageDisplayName(selectedPackage)} {t('packageLabel')}</h3>
                 <p>{packageDescription(selectedPackage)}</p>
-                <div className="checkout-package-duration-v2"><Icon name="tag" size={14} /> {packageDurationText(selectedPackage)}</div>
-                <div className="checkout-total-v2"><small>{t('totalDueToday')}</small><b>{selectedPackage ? packagePrice(selectedPackage) : t('free')}</b></div>
+                <div className="checkout-package-duration-v2"><Icon name="tag" size={14} /> {packageDurationText(selectedPackage, t)}</div>
+                <div className="checkout-total-v2"><small>{t('totalDueToday')}</small><b>{selectedPackage ? packagePrice(selectedPackage, t('free')) : t('free')}</b></div>
                 <ul>{packageFeatureList(selectedPackage).slice(0, 4).map(feature => <li key={feature}><Icon name="check" size={14} />{feature}</li>)}</ul>
               </div>
 
@@ -462,17 +462,17 @@ export default function PostListingPage() {
                     const active = provider.code === selectedProviderCode;
                     return <button key={provider.code} type="button" className={`provider-option-v2 ${active ? 'active' : ''}`} onClick={() => setSelectedProviderCode(provider.code)}>
                       <span>{providerIcon(provider.type)}</span>
-                      <div><strong>{paymentProviderLabel(provider.displayName ?? provider.code ?? provider.name)}</strong><small>Stripe/PayPal chưa kích hoạt</small></div>
+                      <div><strong>{paymentProviderLabel(provider.displayName ?? provider.code ?? provider.name)}</strong><small>{t('paymentNotActivated')}</small></div>
                       <b>{active ? t('selected') : t('select')}</b>
                     </button>;
                   })}
                 </div>
 
                 <div className="provider-form-v2 test-provider-form-v2">
-                  <div className="provider-form-title"><strong>Manual/Test payment</strong><small>Stripe và PayPal chưa dùng nên không hiển thị form thẻ hoặc nút PayPal thật.</small></div>
+                  <div className="provider-form-title"><strong>{t('manualTestPayment')}</strong><small>{t('manualPaymentHelp')}</small></div>
                   <label>{t('status')}<select value={payment.testStatus} onChange={(e)=>setPayment({...payment, testStatus:e.target.value})}><option value="success">{t('success')}</option><option value="pending">{t('pending')}</option><option value="failed">{t('failed')}</option></select></label>
-                  <label>{t('reference')}<input value={payment.testReference} onChange={(e)=>setPayment({...payment, testReference:e.target.value})} placeholder="MANUAL-ORDER-001" /></label>
-                  <div className="provider-coming-soon-v2"><Icon name="shield" size={16} /> Real checkout coming soon: Stripe / PayPal</div>
+                  <label>{t('reference')}<input value={payment.testReference} onChange={(e)=>setPayment({...payment, testReference:e.target.value})} placeholder={t('manualOrderPlaceholder')} /></label>
+                  <div className="provider-coming-soon-v2"><Icon name="shield" size={16} /> {t('realCheckoutComingSoon')}</div>
                 </div>
               </div> : <div className="checkout-free-v2"><Icon name="check" size={26} /><strong>{t('noPaymentRequired')}</strong><p>{t('freePublishText')}</p></div>}
             </div>}
@@ -497,8 +497,8 @@ export default function PostListingPage() {
       <aside className="post-v2-side">
         <div className="post-preview-card-v2">
           <span className="badge badge-featured">{t('preview')}</span>
-          <div className="preview-image-v2">{photos[0] ? <img src={photos[0].url} alt="Cover preview" /> : <Icon name="image" size={36} />}</div>
-          <div className="preview-content-v2"><h3>{form.title || t('yourListingTitle')}</h3><strong>{Number(form.price || 0) ? `$${Number(form.price).toLocaleString()}` : t('price')}</strong><p><Icon name="pin" size={13} /> {publicLocation}</p><small>{selectedCategory} · {form.packageCode} · {packageDurationText(selectedPackage)}</small></div>
+          <div className="preview-image-v2">{photos[0] ? <img src={photos[0].url} alt={t('coverPreview')} /> : <Icon name="image" size={36} />}</div>
+          <div className="preview-content-v2"><h3>{form.title || t('yourListingTitle')}</h3><strong>{Number(form.price || 0) ? `$${Number(form.price).toLocaleString()}` : t('price')}</strong><p><Icon name="pin" size={13} /> {publicLocation}</p><small>{selectedCategory} · {form.packageCode} · {packageDurationText(selectedPackage, t)}</small></div>
         </div>
         <div className="post-tips-v2">
           <h3>{t('tipsForBetterListing')}</h3>

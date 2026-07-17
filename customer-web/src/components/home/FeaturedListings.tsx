@@ -40,13 +40,13 @@ export function FeaturedListings({ items }: { items: ListingDto[] }) {
         <Link href="/search?featured=true">{t('viewAll')}</Link>
       </div>
       <div className="featured-carousel">
-        {canSlide ? <button className="carousel-nav prev" type="button" aria-label="Previous featured listings" onClick={goPrev}>‹</button> : null}
+        {canSlide ? <button className="carousel-nav prev" type="button" aria-label={t('previousFeaturedListings')} onClick={goPrev}>‹</button> : null}
         {visibleItems.map((l) => <ListingCard key={`${l.id}-${index}`} listing={{ ...l, isFeatured: true }} variant="featured" />)}
-        {canSlide ? <button className="carousel-nav next" type="button" aria-label="Next featured listings" onClick={goNext}>›</button> : null}
+        {canSlide ? <button className="carousel-nav next" type="button" aria-label={t('nextFeaturedListings')} onClick={goNext}>›</button> : null}
       </div>
       {canSlide ? (
         <div className="carousel-dots">
-          {list.map((item, dotIndex) => <button key={item.id ?? dotIndex} type="button" className={dotIndex === index ? 'active' : ''} aria-label={`Go to featured listing ${dotIndex + 1}`} onClick={() => setIndex(dotIndex)} />)}
+          {list.map((item, dotIndex) => <button key={item.id ?? dotIndex} type="button" className={dotIndex === index ? 'active' : ''} aria-label={`${t('featuredListingSlide')} ${dotIndex + 1}`} onClick={() => setIndex(dotIndex)} />)}
         </div>
       ) : null}
     </section>

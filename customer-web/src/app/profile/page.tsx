@@ -19,6 +19,10 @@ export default function ProfilePage(){
   const [loading,setLoading]=useState(true);
   const [uploading,setUploading]=useState(false);
   const [avatarUrl,setAvatarUrl]=useState('');
+  const [verificationCode,setVerificationCode]=useState('');
+  const [codeSent,setCodeSent]=useState(false);
+  const [sendingCode,setSendingCode]=useState(false);
+  const [verifyingCode,setVerifyingCode]=useState(false);
 
   useEffect(()=>{
     if(!user?.id){setLoading(false);return;}
@@ -48,6 +52,31 @@ export default function ProfilePage(){
     finally{ setUploading(false); }
   }
 
+  async function sendPhoneCode(){
+    if(!user?.id) return;
+    const phone = String(profile?.phone ?? (user as any).phone ?? '').trim();
+    if(!phone){ setError(t('phoneRequiredBeforeVerify')); return; }
+    setSendingCode(true); setError(''); setMsg('');
+    try{
+      await marketplaceApi.sendPhoneVerification(user.id);
+      setCodeSent(true); setMsg(t('codeSent'));
+    }catch(err:any){ setError(err.message ?? t('saveFailed')); }
+    finally{ setSendingCode(false); }
+  }
+
+  async function verifyPhoneCode(){
+    if(!user?.id || !verificationCode.trim()) return;
+    setVerifyingCode(true); setError(''); setMsg('');
+    try{
+      const result:any = await marketplaceApi.verifyPhone(user.id, verificationCode.trim());
+      const updated = result?.user || {...p, phoneVerified:true};
+      setProfile((current:any)=>({...current,...updated,phoneVerified:true}));
+      saveSession({user:{...user,...updated,phoneVerified:true}});
+      setVerificationCode(''); setCodeSent(false); setMsg(t('phoneVerifiedSuccess'));
+    }catch(err:any){ setError(err.message ?? t('saveFailed')); }
+    finally{ setVerifyingCode(false); }
+  }
+
   async function submit(e:React.FormEvent<HTMLFormElement>){
     e.preventDefault(); if(!user?.id)return;
     setError(''); setMsg('');
@@ -69,7 +98,7 @@ export default function ProfilePage(){
         <div className="profile-avatar-large-v3 has-image">{avatarSrc ? <img src={avatarSrc} alt={p.name || t('avatar')} /> : initials}</div>
         <h2>{p.name??t('customer')}</h2><p>{p.location??'San Jose, CA'} · {t('memberProfile')}</p>
         <div className="profile-score-v3"><span><b>{p.rating??0}</b><small>{t('rating')}</small></span><span><b>{p.reviewCount??0}</b><small>{t('reviews')}</small></span><span><b>{p.trustScore??0}</b><small>{t('trust')}</small></span></div>
-        <div className="trust-list-modern"><span className={p.emailVerified?'ok':''}><Icon name="mail" size={15}/> {t('email')} {p.emailVerified?t('verified'):t('pending')}</span><span className={p.phoneVerified?'ok':''}><Icon name="phone" size={15}/> {t('phone')} {p.phoneVerified?t('verified'):t('pending')}</span><span className={p.idVerified?'ok':''}><Icon name="shield" size={15}/> ID {p.idVerified?t('verified'):t('pending')}</span></div>
+        <div className="trust-list-modern"><span className={p.emailVerified?'ok':''}><Icon name="mail" size={15}/> {t('email')} {p.emailVerified?t('verified'):t('pending')}</span><span className={p.phoneVerified?'ok':''}><Icon name="phone" size={15}/> {t('phone')} {p.phoneVerified?t('verified'):t('pending')}</span><span className={p.idVerified?'ok':''}><Icon name="shield" size={15}/> {t('identity')} {p.idVerified?t('verified'):t('pending')}</span></div>
       </section>
       <form className="profile-form-v3" onSubmit={submit}>
         <h2>{t('personalInformation')}</h2><p>{t('profileInfoText')}</p>
@@ -88,6 +117,17 @@ export default function ProfilePage(){
         <label>{t('fullName')} <b>*</b><input name="name" required defaultValue={p.name??''}/></label>
         <label>{t('email')}<input value={p.email??''} disabled /></label>
         <div className="auth-two-v2"><label>{t('phone')}<input name="phone" defaultValue={p.phone??''}/></label><label>{t('location')}<input name="location" defaultValue={p.location??''}/></label></div>
+        <section className="phone-verification-card-v3">
+          <div>
+            <strong>{t('phoneVerification')}</strong>
+            <p>{t('phoneVerificationText')}</p>
+            <span className={p.phoneVerified?'verification-status verified':'verification-status'}>{p.phoneVerified?t('alreadyVerified'):t('notVerified')}</span>
+          </div>
+          {!p.phoneVerified && <div className="phone-verification-actions-v3">
+            <button type="button" className="secondary-button" disabled={sendingCode} onClick={sendPhoneCode}>{sendingCode?t('sendingCode'):(codeSent?t('resendVerificationCode'):t('sendVerificationCode'))}</button>
+            {codeSent && <div className="phone-code-line-v3"><input inputMode="numeric" autoComplete="one-time-code" maxLength={8} value={verificationCode} placeholder={t('verificationCode')} onChange={e=>setVerificationCode(e.target.value.replace(/\D/g,''))}/><button type="button" className="primary-button" disabled={verifyingCode||!verificationCode} onClick={verifyPhoneCode}>{verifyingCode?t('verifyingCode'):t('verifyPhone')}</button></div>}
+          </div>}
+        </section>
         <input type="hidden" name="avatarUrl" value={avatarUrl}/>
         <button className="primary-button" type="submit">{t('saveProfile')}</button>{msg&&<p className="success-message-v2">{msg}</p>}{error&&<p className="form-error">{error}</p>}
       </form>

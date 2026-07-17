@@ -97,7 +97,7 @@ export function AdvertisementCarousel({ placement, variant = 'wide', titleKey }:
       </div>
 
       {canSlide && (
-        <div className="ad-dots" aria-label="Advertisement slides">
+        <div className="ad-dots" aria-label={t('advertisementSlides')}>
           {items.map((item, i) => (
             <button
               key={item.id}

@@ -272,7 +272,7 @@ export default async function Page({
               <T k="openInMap" />
             </Link>
             <a href={directionsUrl} target="_blank" rel="noreferrer">
-              Directions
+              <T k="directions" />
             </a>
           </div>
         </section>

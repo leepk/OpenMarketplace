@@ -26,7 +26,7 @@ export function ContactSellerCard({ listingId, seller, listingLocation }: { list
       <div className="seller-verify-row">
         <span className={seller?.emailVerified ? 'ok' : ''}><Icon name="mail" size={13}/> {t('email')}</span>
         <span className={seller?.phoneVerified ? 'ok' : ''}><Icon name="phone" size={13}/> {t('phone')}</span>
-        <span className={seller?.idVerified ? 'ok' : ''}><Icon name="shield" size={13}/> ID</span>
+        <span className={seller?.idVerified ? 'ok' : ''}><Icon name="shield" size={13}/> {t('identity')}</span>
       </div>
       <MessageSellerForm listingId={listingId} />
       <Link className="seller-profile-link-modern" href={seller?.id ? `/seller/${seller.id}` : '/profile'}>

@@ -17,4 +17,10 @@ public sealed class UserProfile : OpenMarketplace.Domain.Common.Entity
     public int ReviewCount { get; set; }
     public int TrustScore { get; set; } = 50;
     public string Status { get; set; } = "Active";
+    public string PasswordResetTokenHash { get; set; } = "";
+    public DateTimeOffset? PasswordResetExpiresAt { get; set; }
+    public string PhoneVerificationCodeHash { get; set; } = "";
+    public DateTimeOffset? PhoneVerificationExpiresAt { get; set; }
+    public DateTimeOffset? PhoneVerificationSentAt { get; set; }
+    public int PhoneVerificationAttempts { get; set; }
 }

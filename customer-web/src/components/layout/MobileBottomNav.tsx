@@ -6,7 +6,7 @@ import { useI18n } from '@/lib/i18n/client';
 export function MobileBottomNav() {
   const { t } = useI18n();
   return (
-    <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+    <nav className="mobile-bottom-nav" aria-label={t('mobileNavigation')}>
       <Link href="/"><span>⌂</span>{t('home')}</Link>
       <Link href="/favorites"><span>♡</span>{t('savedListings')}</Link>
       <Link href="/post"><span>＋</span>{t('postListing')}</Link>
