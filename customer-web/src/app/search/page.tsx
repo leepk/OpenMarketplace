@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   marketplaceApi,
   type CategoryDto,
@@ -39,12 +40,23 @@ export default async function SearchPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const normalizedQuery = (params.q ?? "").trim().replace(/\s+/g, " ");
+
+  if ((params.q ?? "") !== normalizedQuery) {
+    const normalizedParams = new URLSearchParams();
+    if (normalizedQuery) normalizedParams.set("q", normalizedQuery);
+    if (params.category) normalizedParams.set("category", params.category);
+    if (params.page && params.page !== "1") normalizedParams.set("page", params.page);
+    if (params.sort) normalizedParams.set("sort", params.sort);
+    redirect(`/search${normalizedParams.toString() ? `?${normalizedParams}` : ""}`);
+  }
+
   let data: PagedListings = { items: [], totalItems: 0 };
   let categories: CategoryDto[] = [];
   try {
     [data, categories] = await Promise.all([
       marketplaceApi.listings({
-        q: params.q,
+        q: normalizedQuery || undefined,
         category: params.category,
         page: Number(params.page ?? 1),
         pageSize: 25,
@@ -168,8 +180,8 @@ export default async function SearchPage({
               <Icon name="search" size={19} />
               <input
                 name="q"
-                defaultValue={params.q ?? ""}
-                placeholder={"Search cars, phones, homes, jobs..."}
+                defaultValue={normalizedQuery}
+                placeholder={"Search listings, categories, cities..."}
               />
             </label>
             <select name="category" defaultValue={params.category ?? ""}>
@@ -210,8 +222,8 @@ export default async function SearchPage({
               {data.totalItems || data.items.length} <T k="results" />
             </strong>
             <span>
-              {params.q ? (
-                <>{params.q}</>
+              {normalizedQuery ? (
+                <>{normalizedQuery}</>
               ) : currentCategory ? (
                 <><T k="category" />: <CategoryName name={currentCategory.code ?? currentCategory.name} /></>
               ) : (

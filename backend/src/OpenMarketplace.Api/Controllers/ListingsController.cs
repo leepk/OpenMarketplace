@@ -15,72 +15,199 @@ namespace OpenMarketplace.Api.Controllers;
 public sealed class ListingsController(AppDbContext db, IContentModerationService moderation) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<object>>> Get([FromQuery] string? q, [FromQuery] Guid? categoryId, [FromQuery] string? category, [FromQuery] string? status, [FromQuery] Guid? sellerId, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken ct = default)
+    public async Task<ActionResult<ApiResponse<object>>> Get(
+        [FromQuery] string? q,
+        [FromQuery] Guid? categoryId,
+        [FromQuery] string? category,
+        [FromQuery] string? status,
+        [FromQuery] Guid? sellerId,
+        [FromQuery] string? sort,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken ct = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
         var now = DateTimeOffset.UtcNow;
 
-        var query = db.Listings.AsNoTracking().Where(x => !x.IsDeleted);
-        if (sellerId.HasValue) query = query.Where(x => x.SellerId == sellerId.Value);
-        if (!string.IsNullOrWhiteSpace(status) && !string.Equals(status, "All", StringComparison.OrdinalIgnoreCase)) query = query.Where(x => x.Status == status || x.ModerationStatus == status);
-        else if (!sellerId.HasValue) query = query.Where(x => x.Status == "Published" && (!x.ExpiresAt.HasValue || x.ExpiresAt >= now));
+        var query =
+            from listing in db.Listings.AsNoTracking()
+            join categoryEntity in db.Categories.AsNoTracking()
+                on listing.CategoryId equals categoryEntity.Id into categoryJoin
+            from categoryEntity in categoryJoin.DefaultIfEmpty()
+            join sellerEntity in db.UserProfiles.AsNoTracking()
+                on listing.SellerId equals sellerEntity.Id into sellerJoin
+            from sellerEntity in sellerJoin.DefaultIfEmpty()
+            where !listing.IsDeleted
+            select new
+            {
+                Listing = listing,
+                Category = categoryEntity,
+                Seller = sellerEntity
+            };
 
-        if (categoryId.HasValue) query = query.Where(x => x.CategoryId == categoryId.Value);
+        if (sellerId.HasValue)
+            query = query.Where(x => x.Listing.SellerId == sellerId.Value);
+
+        if (!string.IsNullOrWhiteSpace(status) &&
+            !string.Equals(status, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(x =>
+                x.Listing.Status == status || x.Listing.ModerationStatus == status);
+        }
+        else if (!sellerId.HasValue)
+        {
+            query = query.Where(x =>
+                x.Listing.Status == "Published" &&
+                (!x.Listing.ExpiresAt.HasValue || x.Listing.ExpiresAt >= now));
+        }
+
+        if (categoryId.HasValue)
+            query = query.Where(x => x.Listing.CategoryId == categoryId.Value);
+
         if (!string.IsNullOrWhiteSpace(category))
         {
-            var categoryText = category.Trim().ToLower();
-            query = query.Where(x => db.Categories.Any(c => c.Id == x.CategoryId && c.IsActive && !c.IsDeleted && (c.Code.ToLower() == categoryText || c.Slug.ToLower() == categoryText || c.Name.ToLower() == categoryText)));
+            var categoryText = category.Trim();
+            query = query.Where(x =>
+                x.Category != null &&
+                x.Category.IsActive &&
+                !x.Category.IsDeleted &&
+                (EF.Functions.ILike(x.Category.Code, categoryText) ||
+                 EF.Functions.ILike(x.Category.Slug, categoryText) ||
+                 EF.Functions.ILike(x.Category.Name, categoryText)));
         }
-        if (!string.IsNullOrWhiteSpace(q)) query = query.Where(x => x.Title.Contains(q) || x.Description.Contains(q) || x.Location.Contains(q));
+
+        string? searchTerm = null;
+        string? containsPattern = null;
+        string? startsWithPattern = null;
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            searchTerm = string.Join(' ', q
+                .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+                .Trim();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                containsPattern = $"%{searchTerm}%";
+                startsWithPattern = $"{searchTerm}%";
+
+                query = query.Where(x =>
+                    EF.Functions.ILike(x.Listing.Title, containsPattern) ||
+                    EF.Functions.ILike(x.Listing.Description, containsPattern) ||
+                    EF.Functions.ILike(x.Listing.Slug, containsPattern) ||
+                    EF.Functions.ILike(x.Listing.Location, containsPattern) ||
+                    EF.Functions.ILike(x.Listing.AddressLine, containsPattern) ||
+                    EF.Functions.ILike(x.Listing.City, containsPattern) ||
+                    EF.Functions.ILike(x.Listing.State, containsPattern) ||
+                    EF.Functions.ILike(x.Listing.PostalCode, containsPattern) ||
+                    (x.Category != null &&
+                     (EF.Functions.ILike(x.Category.Name, containsPattern) ||
+                      EF.Functions.ILike(x.Category.Code, containsPattern) ||
+                      EF.Functions.ILike(x.Category.Slug, containsPattern))) ||
+                    (x.Seller != null &&
+                     EF.Functions.ILike(x.Seller.Name, containsPattern)));
+            }
+        }
 
         var total = await query.CountAsync(ct);
-        var items = await query
-            .OrderByDescending(x => x.IsPinned)
-            .ThenByDescending(x => x.IsFeatured)
-            .ThenByDescending(x => x.CreatedAt)
+
+        var normalizedSort = sort?.Trim().ToLowerInvariant();
+
+        var ordered = query
+            .OrderByDescending(x => x.Listing.IsPinned)
+            .ThenByDescending(x => x.Listing.IsFeatured);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm) &&
+            containsPattern is not null &&
+            startsWithPattern is not null)
+        {
+            ordered = ordered
+                .ThenByDescending(x => EF.Functions.ILike(x.Listing.Title, searchTerm))
+                .ThenByDescending(x => EF.Functions.ILike(x.Listing.Title, startsWithPattern))
+                .ThenByDescending(x => EF.Functions.ILike(x.Listing.Title, containsPattern))
+                .ThenByDescending(x => x.Category != null &&
+                    (EF.Functions.ILike(x.Category.Name, searchTerm) ||
+                     EF.Functions.ILike(x.Category.Code, searchTerm) ||
+                     EF.Functions.ILike(x.Category.Slug, searchTerm)))
+                .ThenByDescending(x => x.Category != null &&
+                    (EF.Functions.ILike(x.Category.Name, containsPattern) ||
+                     EF.Functions.ILike(x.Category.Code, containsPattern) ||
+                     EF.Functions.ILike(x.Category.Slug, containsPattern)))
+                .ThenByDescending(x => EF.Functions.ILike(x.Listing.City, containsPattern))
+                .ThenByDescending(x => EF.Functions.ILike(x.Listing.AddressLine, containsPattern))
+                .ThenByDescending(x => EF.Functions.ILike(x.Listing.Description, containsPattern));
+        }
+
+        ordered = normalizedSort switch
+        {
+            "price-low" => ordered.ThenBy(x => x.Listing.Price ?? decimal.MaxValue),
+            "price-high" => ordered.ThenByDescending(x => x.Listing.Price ?? decimal.MinValue),
+            "popular" => ordered
+                .ThenByDescending(x => x.Listing.ViewCount)
+                .ThenByDescending(x => x.Listing.FavoriteCount)
+                .ThenByDescending(x => x.Listing.LikeCount),
+            _ => ordered.ThenByDescending(x => x.Listing.CreatedAt)
+        };
+
+        var items = await ordered
+            .ThenByDescending(x => x.Listing.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(x => new
             {
-                id = x.Id,
-                title = x.Title,
-                price = x.Price,
-                currency = x.Currency,
-                location = x.Location,
-                addressLine = x.HideExactLocation ? "" : x.AddressLine,
-                city = x.City,
-                state = x.State,
-                postalCode = x.PostalCode,
-                country = x.Country,
-                latitude = x.Latitude,
-                longitude = x.Longitude,
-                locationSource = x.LocationSource,
-                locationPrecision = x.LocationPrecision,
-                hideExactLocation = x.HideExactLocation,
-                description = x.Description,
-                status = x.Status,
-                moderationStatus = x.ModerationStatus,
-                isFeatured = x.IsFeatured,
-                isUrgent = x.IsUrgent,
-                isPinned = x.IsPinned,
-                packageCode = x.PackageCode,
-                packageStatus = x.PackageStatus,
-                packageStartsAt = x.PackageStartsAt,
-                packageEndsAt = x.PackageEndsAt,
-                viewCount = x.ViewCount,
-                favoriteCount = x.FavoriteCount,
-                likeCount = x.LikeCount,
-                commentCount = x.CommentCount,
-                createdAt = x.CreatedAt,
-                categoryId = x.CategoryId,
-                categoryCode = db.Categories.Where(c => c.Id == x.CategoryId).Select(c => c.Code).FirstOrDefault(),
-                categoryName = db.Categories.Where(c => c.Id == x.CategoryId).Select(c => c.Code).FirstOrDefault(),
-                categoryIconKey = db.Categories.Where(c => c.Id == x.CategoryId).Select(c => c.IconKey).FirstOrDefault(),
-                imageUrl = db.MediaAssets.Where(m => m.ListingId == x.Id).OrderBy(m => m.CreatedAt).Select(m => m.Url).FirstOrDefault()
-            }).ToListAsync(ct);
+                id = x.Listing.Id,
+                title = x.Listing.Title,
+                price = x.Listing.Price,
+                currency = x.Listing.Currency,
+                location = x.Listing.Location,
+                addressLine = x.Listing.HideExactLocation ? "" : x.Listing.AddressLine,
+                city = x.Listing.City,
+                state = x.Listing.State,
+                postalCode = x.Listing.PostalCode,
+                country = x.Listing.Country,
+                latitude = x.Listing.Latitude,
+                longitude = x.Listing.Longitude,
+                locationSource = x.Listing.LocationSource,
+                locationPrecision = x.Listing.LocationPrecision,
+                hideExactLocation = x.Listing.HideExactLocation,
+                description = x.Listing.Description,
+                status = x.Listing.Status,
+                moderationStatus = x.Listing.ModerationStatus,
+                isFeatured = x.Listing.IsFeatured,
+                isUrgent = x.Listing.IsUrgent,
+                isPinned = x.Listing.IsPinned,
+                packageCode = x.Listing.PackageCode,
+                packageStatus = x.Listing.PackageStatus,
+                packageStartsAt = x.Listing.PackageStartsAt,
+                packageEndsAt = x.Listing.PackageEndsAt,
+                viewCount = x.Listing.ViewCount,
+                favoriteCount = x.Listing.FavoriteCount,
+                likeCount = x.Listing.LikeCount,
+                commentCount = x.Listing.CommentCount,
+                createdAt = x.Listing.CreatedAt,
+                categoryId = x.Listing.CategoryId,
+                categoryCode = x.Category != null ? x.Category.Code : null,
+                categoryName = x.Category != null ? x.Category.Name : null,
+                categoryIconKey = x.Category != null ? x.Category.IconKey : null,
+                sellerName = x.Seller != null ? x.Seller.Name : null,
+                imageUrl = db.MediaAssets
+                    .Where(m => m.ListingId == x.Listing.Id)
+                    .OrderBy(m => m.CreatedAt)
+                    .Select(m => m.Url)
+                    .FirstOrDefault()
+            })
+            .ToListAsync(ct);
 
-        return Ok(ApiResponse<object>.Ok(new { items, page, pageSize, totalItems = total, totalPages = (int)Math.Ceiling(total / (double)pageSize) }, HttpContext.TraceIdentifier));
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            items,
+            page,
+            pageSize,
+            totalItems = total,
+            totalPages = (int)Math.Ceiling(total / (double)pageSize),
+            query = searchTerm
+        }, HttpContext.TraceIdentifier));
     }
 
     [HttpGet("{id:guid}")]
@@ -134,7 +261,7 @@ public sealed class ListingsController(AppDbContext db, IContentModerationServic
                 createdAt = listing.CreatedAt,
                 categoryId = listing.CategoryId,
                 categoryCode = category != null ? category.Code : null,
-                categoryName = category != null ? category.Code : null,
+                categoryName = category != null ? category.Name : null,
                 categoryIconKey = category != null ? category.IconKey : null,
                 imageUrl = media.Select(x => x.Url).FirstOrDefault()
             },

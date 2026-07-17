@@ -8,6 +8,10 @@ import { useI18n } from '@/lib/i18n/client';
 import { resolveSiteImage, useSiteSettings } from '@/lib/site-settings';
 
 export function SiteHeader() {
+  const normalizeSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    const input = event.currentTarget.elements.namedItem('q') as HTMLInputElement | null;
+    if (input) input.value = input.value.trim().replace(/\s+/g, ' ');
+  };
   const { t } = useI18n();
   const site = useSiteSettings();
   const logo = resolveSiteImage(site.logoUrl);
@@ -19,7 +23,7 @@ export function SiteHeader() {
           <span className="logo-pin">{logo ? <img src={logo} alt="" /> : <Icon name="logo" size={25} />}</span>
           <span>{siteName}</span>
         </Link>
-        <form className="global-search" action="/search">
+        <form className="global-search" action="/search" onSubmit={normalizeSearch}>
           <Icon name="search" size={18} />
           <input name="q" placeholder={t('searchPlaceholder')} />
         </form>
