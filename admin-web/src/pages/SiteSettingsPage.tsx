@@ -292,6 +292,12 @@ export function SiteSettingsPage() {
                       <div>
                         <h3>{provider.title}</h3>
                         <p>{provider.description}</p>
+                        {provider.title === 'Google' && (
+                          <p className="oauth-callback-hint"><strong>Authorized redirect URI:</strong><br/><code>{`${appConfig.apiBaseUrl.replace(/\/api\/v1\/?$/i, '')}/api/v1/auth/external/google/callback`}</code></p>
+                        )}
+                        {provider.title === 'Facebook' && (
+                          <p className="oauth-callback-hint"><strong>Valid OAuth Redirect URI:</strong><br/><code>{`${appConfig.apiBaseUrl.replace(/\/api\/v1\/?$/i, '')}/api/v1/auth/external/facebook/callback`}</code></p>
+                        )}
                       </div>
                     </div>
                     <div className="ad-form-grid site-settings-grid settings-provider-fields">

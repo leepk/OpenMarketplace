@@ -5,24 +5,47 @@ namespace OpenMarketplace.Application.Feed;
 
 public sealed record FeedItemDto(string Type, object Data);
 public sealed record HomeFeedResponse(IReadOnlyList<object> Listings, IReadOnlyList<object> FeaturedListings, IReadOnlyList<object> RecentListings, IReadOnlyList<object> Categories, IReadOnlyList<FeedItemDto> Items, int Page, int PageSize, int TotalItems, int TotalPages);
-public interface IFeedService { Task<HomeFeedResponse> HomeAsync(int page, int pageSize, CancellationToken ct); }
+public interface IFeedService { Task<HomeFeedResponse> HomeAsync(int page, int pageSize, double? latitude, double? longitude, CancellationToken ct); }
 
 public sealed class FeedService(IAppDbContext db) : IFeedService
 {
-    public async Task<HomeFeedResponse> HomeAsync(int page, int pageSize, CancellationToken ct)
+    public async Task<HomeFeedResponse> HomeAsync(int page, int pageSize, double? latitude, double? longitude, CancellationToken ct)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
         var now = DateTimeOffset.UtcNow;
 
-        var query = db.Listings.AsNoTracking()
-            .Where(x => x.Status == "Published" && !x.IsDeleted && (!x.ExpiresAt.HasValue || x.ExpiresAt >= now))
-            .OrderByDescending(x => x.IsPinned)
-            .ThenByDescending(x => x.IsFeatured)
-            .ThenByDescending(x => x.CreatedAt);
+        var baseQuery = db.Listings.AsNoTracking()
+            .Where(x => x.Status == "Published" && !x.IsDeleted && (!x.ExpiresAt.HasValue || x.ExpiresAt >= now));
 
-        var total = await query.CountAsync(ct);
-        var listings = await query.Skip((page - 1) * pageSize).Take(pageSize)
+        var total = await baseQuery.CountAsync(ct);
+        var hasLocation = latitude.HasValue && longitude.HasValue &&
+                          latitude.Value is >= -90 and <= 90 && longitude.Value is >= -180 and <= 180;
+
+        IQueryable<OpenMarketplace.Domain.Listings.Listing> orderedQuery;
+        if (hasLocation)
+        {
+            var lat = latitude!.Value;
+            var lng = longitude!.Value;
+            orderedQuery = baseQuery
+                .OrderBy(x => x.Latitude.HasValue && x.Longitude.HasValue ? 0 : 1)
+                .ThenBy(x => x.Latitude.HasValue && x.Longitude.HasValue
+                    ? ((double)x.Latitude.Value - lat) * ((double)x.Latitude.Value - lat) +
+                      (((double)x.Longitude.Value - lng) * ((double)x.Longitude.Value - lng))
+                    : double.MaxValue)
+                .ThenByDescending(x => x.IsPinned)
+                .ThenByDescending(x => x.IsFeatured)
+                .ThenByDescending(x => x.CreatedAt);
+        }
+        else
+        {
+            orderedQuery = baseQuery
+                .OrderByDescending(x => x.CreatedAt)
+                .ThenByDescending(x => x.IsPinned)
+                .ThenByDescending(x => x.IsFeatured);
+        }
+
+        var listings = await orderedQuery.Skip((page - 1) * pageSize).Take(pageSize)
             .Select(x => new
             {
                 id = x.Id,
@@ -30,6 +53,8 @@ public sealed class FeedService(IAppDbContext db) : IFeedService
                 price = x.Price,
                 currency = x.Currency,
                 location = x.Location,
+                latitude = x.Latitude,
+                longitude = x.Longitude,
                 description = x.Description,
                 status = x.Status,
                 isFeatured = x.IsFeatured,
@@ -61,6 +86,8 @@ public sealed class FeedService(IAppDbContext db) : IFeedService
                 price = x.Price,
                 currency = x.Currency,
                 location = x.Location,
+                latitude = x.Latitude,
+                longitude = x.Longitude,
                 description = x.Description,
                 status = x.Status,
                 isFeatured = x.IsFeatured,

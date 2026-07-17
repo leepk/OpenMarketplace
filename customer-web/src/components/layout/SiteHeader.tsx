@@ -32,9 +32,6 @@ export function SiteHeader() {
           <option value="services">{t('services')}</option>
           <option value="electronics">{t('electronics')}</option>
         </select>
-        <select className="header-control location" defaultValue="San Jose, CA" aria-label={t('location')}>
-          <option>San Jose, CA</option><option>Santa Clara, CA</option><option>Sunnyvale, CA</option><option>Milpitas, CA</option>
-        </select>
         <LanguageSwitcher />
         <Link href="/post" className="post-listing"><Icon name="plus" size={20} /> {t('postListing')}</Link>
         <HeaderUserMenu />

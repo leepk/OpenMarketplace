@@ -1,9 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { apiClient } from '@/lib/api/apiClient';
 import { saveSession } from '@/lib/api/session';
+import { appConfig } from '@/lib/config';
 import { useI18n } from '@/lib/i18n/client';
 
 export default function Page() {
@@ -12,6 +13,9 @@ export default function Page() {
   const [busy, setBusy] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [providers, setProviders] = useState<any>({ google: { enabled: false }, facebook: { enabled: false } });
+
+  useEffect(() => { apiClient.get('/auth/providers').then(setProviders).catch(() => undefined); }, []);
 
   const passwordStrength = useMemo(() => {
     let score = 0;
@@ -100,7 +104,7 @@ export default function Page() {
 
           <button className="auth-primary-v2" type="submit" disabled={busy}>{busy ? t('creating') : t('createAccount')}</button>
           <div className="auth-divider-v2"><span>{t('orContinueWith')}</span></div>
-          <div className="auth-social-v2"><button type="button">Google</button><button type="button">Facebook</button></div>
+          <div className="auth-social-v2">{providers.google?.enabled && <a href={`${appConfig.apiBaseUrl}/auth/external/google?returnUrl=${encodeURIComponent('/profile')}`}>Google</a>}{providers.facebook?.enabled && <a href={`${appConfig.apiBaseUrl}/auth/external/facebook?returnUrl=${encodeURIComponent('/profile')}`}>Facebook</a>}</div>
           <p className="auth-switch-v2">{t('alreadyHaveAccount')} <Link href="/login">{t('login')}</Link></p>
           {msg && <p className="form-error">{msg}</p>}
         </form>

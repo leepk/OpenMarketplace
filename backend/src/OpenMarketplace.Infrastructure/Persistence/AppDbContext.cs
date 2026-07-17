@@ -7,6 +7,7 @@ using OpenMarketplace.Domain.Commerce;
 using OpenMarketplace.Domain.Communication;
 using OpenMarketplace.Domain.Engagement;
 using OpenMarketplace.Domain.Listings;
+using OpenMarketplace.Domain.Locations;
 using OpenMarketplace.Domain.Media;
 using OpenMarketplace.Domain.Moderation;
 using OpenMarketplace.Domain.Settings;
@@ -42,6 +43,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<PaymentProvider> PaymentProviders => Set<PaymentProvider>();
     public DbSet<BlockedWord> BlockedWords => Set<BlockedWord>();
     public DbSet<ListingModerationResult> ListingModerationResults => Set<ListingModerationResult>();
+    public DbSet<Locality> Localities => Set<Locality>();
+    public DbSet<UserLocation> UserLocations => Set<UserLocation>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -72,5 +75,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         builder.Entity<PaymentProvider>(e=>{e.ToTable("payment_providers");e.HasKey(x=>x.Id);e.HasIndex(x=>x.Code).IsUnique();});
         builder.Entity<BlockedWord>(e=>{e.ToTable("blocked_words");e.HasKey(x=>x.Id);e.HasIndex(x=>new{x.IsActive,x.NormalizedWord});});
         builder.Entity<ListingModerationResult>(e=>{e.ToTable("listing_moderation_results");e.HasKey(x=>x.Id);e.HasIndex(x=>x.ListingId);e.HasIndex(x=>new{x.ListingId,x.TargetType,x.CreatedAt});});
+        builder.Entity<Locality>(e=>{e.ToTable("localities");e.HasKey(x=>x.Id);e.HasIndex(x=>new{x.StateCode,x.Name}).IsUnique();e.HasIndex(x=>new{x.IsActive,x.SortOrder,x.SelectionCount});});
+        builder.Entity<UserLocation>(e=>{e.ToTable("user_locations");e.HasKey(x=>x.Id);e.HasIndex(x=>new{x.UserId,x.LastUsedAt});e.HasIndex(x=>new{x.UserId,x.IsDefault});});
     }
 }

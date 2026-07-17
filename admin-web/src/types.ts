@@ -14,6 +14,7 @@ export type AdminTab =
   | 'settings'
   | 'siteSettings'
   | 'blockedWords'
+  | 'localities'
   | 'health';
 
 export type Theme = 'light' | 'dark';

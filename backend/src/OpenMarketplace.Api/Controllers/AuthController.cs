@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.DataProtection;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,7 +18,7 @@ namespace OpenMarketplace.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/auth")]
-public sealed class AuthController(AppDbContext db, IConfiguration config) : ControllerBase
+public sealed class AuthController(AppDbContext db, IConfiguration config, IHttpClientFactory httpClientFactory, IDataProtectionProvider dataProtectionProvider) : ControllerBase
 {
     [HttpPost("register")]
     public async Task<ActionResult<ApiResponse<object>>> Register(RegisterRequest request, CancellationToken ct)
@@ -111,6 +113,94 @@ public sealed class AuthController(AppDbContext db, IConfiguration config) : Con
         }, HttpContext.TraceIdentifier));
     }
 
+
+
+    [HttpGet("external/google")]
+    public async Task<IActionResult> GoogleLogin([FromQuery] string? returnUrl, CancellationToken ct)
+    {
+        var settings = await GetOAuthSettingsAsync(ct);
+        if (!IsTrue(settings, "auth.google_enabled")) return OAuthFailure("Google login is disabled.", returnUrl);
+        var clientId = GetSetting(settings, "auth.google_client_id");
+        if (string.IsNullOrWhiteSpace(clientId)) return OAuthFailure("Google Client ID is not configured.", returnUrl);
+        var callback = BuildCallbackUrl("google");
+        var state = ProtectOAuthState("google", returnUrl);
+        var url = "https://accounts.google.com/o/oauth2/v2/auth" +
+                  $"?client_id={Uri.EscapeDataString(clientId)}&redirect_uri={Uri.EscapeDataString(callback)}&response_type=code&scope={Uri.EscapeDataString("openid email profile")}&state={Uri.EscapeDataString(state)}&prompt=select_account";
+        return Redirect(url);
+    }
+
+    [HttpGet("external/google/callback")]
+    public async Task<IActionResult> GoogleCallback([FromQuery] string? code, [FromQuery] string? state, [FromQuery] string? error, CancellationToken ct)
+    {
+        var oauthState = UnprotectOAuthState(state, "google");
+        if (!string.IsNullOrWhiteSpace(error) || string.IsNullOrWhiteSpace(code)) return OAuthFailure(error ?? "Google did not return an authorization code.", oauthState.ReturnUrl);
+        try
+        {
+            var settings = await GetOAuthSettingsAsync(ct);
+            var clientId = GetSetting(settings, "auth.google_client_id");
+            var clientSecret = GetSetting(settings, "auth.google_client_secret");
+            var client = httpClientFactory.CreateClient();
+            using var tokenResponse = await client.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["code"] = code,
+                ["client_id"] = clientId,
+                ["client_secret"] = clientSecret,
+                ["redirect_uri"] = BuildCallbackUrl("google"),
+                ["grant_type"] = "authorization_code"
+            }), ct);
+            tokenResponse.EnsureSuccessStatusCode();
+            using var tokenJson = JsonDocument.Parse(await tokenResponse.Content.ReadAsStringAsync(ct));
+            var accessToken = tokenJson.RootElement.GetProperty("access_token").GetString() ?? throw new InvalidOperationException("Google access token is missing.");
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://openidconnect.googleapis.com/v1/userinfo");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+            using var profileResponse = await client.SendAsync(request, ct);
+            profileResponse.EnsureSuccessStatusCode();
+            using var profile = JsonDocument.Parse(await profileResponse.Content.ReadAsStringAsync(ct));
+            return await CompleteExternalLoginAsync("Google", profile.RootElement.GetProperty("sub").GetString(), profile.RootElement.GetProperty("email").GetString(), GetJsonString(profile.RootElement, "name"), GetJsonString(profile.RootElement, "picture"), oauthState.ReturnUrl, settings, ct);
+        }
+        catch (Exception ex) { return OAuthFailure($"Google login failed: {ex.Message}", oauthState.ReturnUrl); }
+    }
+
+    [HttpGet("external/facebook")]
+    public async Task<IActionResult> FacebookLogin([FromQuery] string? returnUrl, CancellationToken ct)
+    {
+        var settings = await GetOAuthSettingsAsync(ct);
+        if (!IsTrue(settings, "auth.facebook_enabled")) return OAuthFailure("Facebook login is disabled.", returnUrl);
+        var appId = GetSetting(settings, "auth.facebook_app_id");
+        if (string.IsNullOrWhiteSpace(appId)) return OAuthFailure("Facebook App ID is not configured.", returnUrl);
+        var callback = BuildCallbackUrl("facebook");
+        var state = ProtectOAuthState("facebook", returnUrl);
+        var url = "https://www.facebook.com/v23.0/dialog/oauth" +
+                  $"?client_id={Uri.EscapeDataString(appId)}&redirect_uri={Uri.EscapeDataString(callback)}&response_type=code&scope={Uri.EscapeDataString("email,public_profile")}&state={Uri.EscapeDataString(state)}";
+        return Redirect(url);
+    }
+
+    [HttpGet("external/facebook/callback")]
+    public async Task<IActionResult> FacebookCallback([FromQuery] string? code, [FromQuery] string? state, [FromQuery] string? error_message, CancellationToken ct)
+    {
+        var oauthState = UnprotectOAuthState(state, "facebook");
+        if (!string.IsNullOrWhiteSpace(error_message) || string.IsNullOrWhiteSpace(code)) return OAuthFailure(error_message ?? "Facebook did not return an authorization code.", oauthState.ReturnUrl);
+        try
+        {
+            var settings = await GetOAuthSettingsAsync(ct);
+            var appId = GetSetting(settings, "auth.facebook_app_id");
+            var appSecret = GetSetting(settings, "auth.facebook_app_secret");
+            var callback = BuildCallbackUrl("facebook");
+            var client = httpClientFactory.CreateClient();
+            var tokenUrl = $"https://graph.facebook.com/v23.0/oauth/access_token?client_id={Uri.EscapeDataString(appId)}&client_secret={Uri.EscapeDataString(appSecret)}&redirect_uri={Uri.EscapeDataString(callback)}&code={Uri.EscapeDataString(code)}";
+            using var tokenResponse = await client.GetAsync(tokenUrl, ct);
+            tokenResponse.EnsureSuccessStatusCode();
+            using var tokenJson = JsonDocument.Parse(await tokenResponse.Content.ReadAsStringAsync(ct));
+            var accessToken = tokenJson.RootElement.GetProperty("access_token").GetString() ?? throw new InvalidOperationException("Facebook access token is missing.");
+            var profileUrl = $"https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token={Uri.EscapeDataString(accessToken)}";
+            using var profileResponse = await client.GetAsync(profileUrl, ct);
+            profileResponse.EnsureSuccessStatusCode();
+            using var profile = JsonDocument.Parse(await profileResponse.Content.ReadAsStringAsync(ct));
+            var picture = profile.RootElement.TryGetProperty("picture", out var pictureNode) && pictureNode.TryGetProperty("data", out var dataNode) ? GetJsonString(dataNode, "url") : string.Empty;
+            return await CompleteExternalLoginAsync("Facebook", GetJsonString(profile.RootElement, "id"), GetJsonString(profile.RootElement, "email"), GetJsonString(profile.RootElement, "name"), picture, oauthState.ReturnUrl, settings, ct);
+        }
+        catch (Exception ex) { return OAuthFailure($"Facebook login failed: {ex.Message}", oauthState.ReturnUrl); }
+    }
 
     [HttpPost("send-phone-verification")]
     public async Task<ActionResult<ApiResponse<object>>> SendPhoneVerification(SendPhoneVerificationRequest request, CancellationToken ct)
@@ -270,6 +360,85 @@ public sealed class AuthController(AppDbContext db, IConfiguration config) : Con
         catch { return false; }
     }
 
+
+    private async Task<Dictionary<string, string>> GetOAuthSettingsAsync(CancellationToken ct) => await db.AppSettings.AsNoTracking()
+        .Where(x => !x.IsDeleted && x.Key.StartsWith("auth."))
+        .ToDictionaryAsync(x => x.Key, x => x.Value ?? string.Empty, ct);
+
+    private string BuildCallbackUrl(string provider) => $"{Request.Scheme}://{Request.Host}{Request.PathBase}/api/v1/auth/external/{provider}/callback";
+
+    private string ProtectOAuthState(string provider, string? returnUrl)
+    {
+        var safeReturnUrl = NormalizeReturnUrl(returnUrl);
+        var payload = JsonSerializer.Serialize(new OAuthState(provider, safeReturnUrl, DateTimeOffset.UtcNow.AddMinutes(10)));
+        return dataProtectionProvider.CreateProtector("OpenMarketplace.ExternalOAuth.State.v1").Protect(payload);
+    }
+
+    private OAuthState UnprotectOAuthState(string? state, string expectedProvider)
+    {
+        if (string.IsNullOrWhiteSpace(state)) return new OAuthState(expectedProvider, "/", DateTimeOffset.UtcNow);
+        try
+        {
+            var json = dataProtectionProvider.CreateProtector("OpenMarketplace.ExternalOAuth.State.v1").Unprotect(state);
+            var value = JsonSerializer.Deserialize<OAuthState>(json);
+            if (value is null || !string.Equals(value.Provider, expectedProvider, StringComparison.OrdinalIgnoreCase) || value.ExpiresAt < DateTimeOffset.UtcNow)
+                throw new InvalidOperationException("OAuth state is invalid or expired.");
+            return value with { ReturnUrl = NormalizeReturnUrl(value.ReturnUrl) };
+        }
+        catch { return new OAuthState(expectedProvider, "/", DateTimeOffset.UtcNow); }
+    }
+
+    private async Task<IActionResult> CompleteExternalLoginAsync(string provider, string? providerUserId, string? email, string? name, string? avatarUrl, string returnUrl, Dictionary<string, string> settings, CancellationToken ct)
+    {
+        email = (email ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(providerUserId) || string.IsNullOrWhiteSpace(email)) return OAuthFailure($"{provider} did not provide a verified email address.", returnUrl);
+        var user = await db.UserProfiles.FirstOrDefaultAsync(x => x.Email == email && !x.IsDeleted, ct);
+        if (user is null)
+        {
+            if (!IsTrue(settings, "auth.auto_create_user", true)) return OAuthFailure("No account is linked to this email and automatic account creation is disabled.", returnUrl);
+            user = new UserProfile
+            {
+                Name = string.IsNullOrWhiteSpace(name) ? email.Split('@')[0] : name.Trim(),
+                Email = email,
+                Role = "Customer",
+                Source = provider,
+                PasswordHash = string.Empty,
+                AvatarUrl = string.IsNullOrWhiteSpace(avatarUrl) ? DefaultAvatar(email) : avatarUrl,
+                EmailVerified = true,
+                TrustScore = 50,
+                Status = "Active"
+            };
+            db.UserProfiles.Add(user);
+        }
+        else
+        {
+            if (!string.Equals(user.Status, "Active", StringComparison.OrdinalIgnoreCase)) return OAuthFailure("This account is not active.", returnUrl);
+            user.EmailVerified = true;
+            if (string.IsNullOrWhiteSpace(user.AvatarUrl) && !string.IsNullOrWhiteSpace(avatarUrl)) user.AvatarUrl = avatarUrl;
+            if (string.IsNullOrWhiteSpace(user.Source) || user.Source == "WebCustomer") user.Source = provider;
+            user.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+        await db.SaveChangesAsync(ct);
+        var token = CreateJwtToken(user, false, TimeSpan.FromDays(7));
+        var customerBaseUrl = (config["Customer:BaseUrl"] ?? config["Frontend:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
+        return Redirect($"{customerBaseUrl}/auth/callback?token={Uri.EscapeDataString(token)}&returnUrl={Uri.EscapeDataString(NormalizeReturnUrl(returnUrl))}");
+    }
+
+    private IActionResult OAuthFailure(string message, string? returnUrl)
+    {
+        var customerBaseUrl = (config["Customer:BaseUrl"] ?? config["Frontend:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
+        return Redirect($"{customerBaseUrl}/auth/callback?error={Uri.EscapeDataString(message)}&returnUrl={Uri.EscapeDataString(NormalizeReturnUrl(returnUrl))}");
+    }
+
+    private static string NormalizeReturnUrl(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || !value.StartsWith('/') || value.StartsWith("//")) return "/";
+        return value.Length > 500 ? "/" : value;
+    }
+    private static string GetSetting(IReadOnlyDictionary<string, string> settings, string key) => settings.TryGetValue(key, out var value) ? value : string.Empty;
+    private static bool IsTrue(IReadOnlyDictionary<string, string> settings, string key, bool fallback = false) => settings.TryGetValue(key, out var value) ? bool.TryParse(value, out var enabled) && enabled : fallback;
+    private static string GetJsonString(JsonElement element, string property) => element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? string.Empty : string.Empty;
+
     private string CreateJwtToken(UserProfile user, bool isAdminToken, TimeSpan expires)
     {
         var now = DateTimeOffset.UtcNow;
@@ -404,3 +573,5 @@ public sealed record ForgotPasswordRequest(string Email);
 public sealed record ResetPasswordRequest(string Email, string Token, string NewPassword);
 public sealed record SendPhoneVerificationRequest(Guid UserId);
 public sealed record VerifyPhoneRequest(Guid UserId, string Code);
+
+public sealed record OAuthState(string Provider, string ReturnUrl, DateTimeOffset ExpiresAt);

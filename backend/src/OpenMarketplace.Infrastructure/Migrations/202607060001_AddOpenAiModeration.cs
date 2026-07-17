@@ -21,8 +21,12 @@ CREATE TABLE IF NOT EXISTS blocked_words (
     "IsActive" boolean NOT NULL DEFAULT true,
     "Notes" text NOT NULL DEFAULT '',
     "CreatedAt" timestamp with time zone NOT NULL DEFAULT now(),
+    "CreatedBy" uuid NULL,
     "UpdatedAt" timestamp with time zone NULL,
-    "IsDeleted" boolean NOT NULL DEFAULT false
+    "UpdatedBy" uuid NULL,
+    "IsDeleted" boolean NOT NULL DEFAULT false,
+    "DeletedAt" timestamp with time zone NULL,
+    "DeletedBy" uuid NULL
 );
 CREATE INDEX IF NOT EXISTS "IX_blocked_words_IsActive_NormalizedWord" ON blocked_words ("IsActive", "NormalizedWord");
 
@@ -37,8 +41,12 @@ CREATE TABLE IF NOT EXISTS listing_moderation_results (
     "MaxScore" numeric NOT NULL DEFAULT 0,
     "RawResponse" text NOT NULL DEFAULT '',
     "CreatedAt" timestamp with time zone NOT NULL DEFAULT now(),
+    "CreatedBy" uuid NULL,
     "UpdatedAt" timestamp with time zone NULL,
-    "IsDeleted" boolean NOT NULL DEFAULT false
+    "UpdatedBy" uuid NULL,
+    "IsDeleted" boolean NOT NULL DEFAULT false,
+    "DeletedAt" timestamp with time zone NULL,
+    "DeletedBy" uuid NULL
 );
 CREATE INDEX IF NOT EXISTS "IX_listing_moderation_results_ListingId" ON listing_moderation_results ("ListingId");
 CREATE INDEX IF NOT EXISTS "IX_listing_moderation_results_ListingId_TargetType_CreatedAt" ON listing_moderation_results ("ListingId", "TargetType", "CreatedAt");

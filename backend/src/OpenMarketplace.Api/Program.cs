@@ -81,6 +81,8 @@ try
         });
     builder.Services.AddAuthorization();
 
+    builder.Services.AddDataProtection();
+    builder.Services.AddHttpClient();
     builder.Services.AddHttpClient("openai-moderation", c => c.Timeout = TimeSpan.FromSeconds(30));
     builder.Services.AddScoped<IContentModerationService, ContentModerationService>();
     builder.Services.AddControllers();

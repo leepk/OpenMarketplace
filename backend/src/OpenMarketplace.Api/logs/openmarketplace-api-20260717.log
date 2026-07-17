@@ -1,0 +1,128 @@
+2026-07-17 14:34:52.290 -07:00 [INF] Starting OpenMarketplace API
+2026-07-17 14:34:52.966 -07:00 [INF] OpenMarketplace API listening. Swagger: http://localhost:5001/swagger/index.html
+2026-07-17 14:34:53.050 -07:00 [INF] Auto database migration/seed attempt 1/10
+2026-07-17 14:34:53.230 -07:00 [INF] Database initialization started
+2026-07-17 14:34:54.296 -07:00 [INF] HTTP GET /swagger/index.html responded 200 in 167.0735 ms
+2026-07-17 14:34:54.372 -07:00 [INF] HTTP GET /swagger/index.js responded 200 in 1.9560 ms
+2026-07-17 14:34:54.829 -07:00 [INF] HTTP GET /swagger/v1/swagger.json responded 200 in 382.1034 ms
+2026-07-17 14:34:55.666 -07:00 [INF] Pending EF migrations: none
+2026-07-17 14:34:55.667 -07:00 [INF] Applying EF Core migrations automatically...
+2026-07-17 14:34:55.940 -07:00 [INF] Ensuring message/chat schema repair...
+2026-07-17 14:34:55.959 -07:00 [INF] Ensuring listing location schema repair...
+2026-07-17 14:34:55.963 -07:00 [INF] Ensuring notification schema repair...
+2026-07-17 14:34:55.968 -07:00 [INF] Ensuring user role/source schema repair...
+2026-07-17 14:34:55.973 -07:00 [INF] Ensuring package sort order schema repair...
+2026-07-17 14:34:55.977 -07:00 [INF] Ensuring authentication schema repair...
+2026-07-17 14:34:55.978 -07:00 [INF] Ensuring moderation schema repair...
+2026-07-17 14:34:55.987 -07:00 [INF] Ensuring user location schema repair...
+2026-07-17 14:34:56.035 -07:00 [INF] Ensuring locality schema and California city data...
+2026-07-17 14:34:56.731 -07:00 [INF] Ensuring seed history schema...
+2026-07-17 14:34:56.743 -07:00 [INF] Seed version InitialMarketplaceDataV1 already applied. Skipping seed data.
+2026-07-17 14:34:56.743 -07:00 [INF] Database initialization completed
+2026-07-17 14:35:11.425 -07:00 [INF] HTTP OPTIONS /api/v1/categories responded 204 in 3.4893 ms
+2026-07-17 14:35:11.425 -07:00 [INF] HTTP OPTIONS /api/v1/billing/providers responded 204 in 4.7273 ms
+2026-07-17 14:35:11.428 -07:00 [INF] HTTP OPTIONS /api/v1/packages responded 204 in 7.7877 ms
+2026-07-17 14:35:11.978 -07:00 [INF] HTTP GET /api/v1/packages responded 200 in 539.0793 ms
+2026-07-17 14:35:11.980 -07:00 [INF] HTTP GET /api/v1/categories responded 200 in 549.1552 ms
+2026-07-17 14:35:11.986 -07:00 [INF] HTTP GET /api/v1/billing/providers responded 200 in 546.9292 ms
+2026-07-17 14:35:12.099 -07:00 [INF] HTTP GET /api/v1/site-settings responded 200 in 677.9916 ms
+2026-07-17 14:36:36.853 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 0.9710 ms
+2026-07-17 14:36:36.853 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 1.6351 ms
+2026-07-17 14:36:36.853 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 1.4539 ms
+2026-07-17 14:36:36.853 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 1.0807 ms
+2026-07-17 14:36:36.853 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 1.1069 ms
+2026-07-17 14:36:36.853 -07:00 [INF] HTTP OPTIONS /api/v1/ads responded 204 in 1.5187 ms
+2026-07-17 14:36:37.301 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 380.1540 ms
+2026-07-17 14:36:37.302 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 380.9712 ms
+2026-07-17 14:36:37.301 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 380.0642 ms
+2026-07-17 14:36:37.302 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 380.6382 ms
+2026-07-17 14:36:37.307 -07:00 [INF] HTTP OPTIONS /api/v1/feed/home responded 204 in 0.0727 ms
+2026-07-17 14:36:37.307 -07:00 [INF] HTTP OPTIONS /api/v1/feed/home responded 204 in 0.0596 ms
+2026-07-17 14:36:37.355 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 431.6980 ms
+2026-07-17 14:36:37.357 -07:00 [INF] HTTP GET /api/v1/ads responded 200 in 429.0511 ms
+2026-07-17 14:36:37.361 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-956b-7a5e-b9d8-0ef3c1dcd66d/impression responded 204 in 0.0575 ms
+2026-07-17 14:36:37.371 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-958a-7a15-a575-98aaa0e56c88/impression responded 204 in 0.2454 ms
+2026-07-17 14:36:37.373 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-9588-7e1c-b138-098134567940/impression responded 204 in 0.1857 ms
+2026-07-17 14:36:37.568 -07:00 [INF] HTTP GET /api/v1/feed/home responded 200 in 255.3844 ms
+2026-07-17 14:36:37.568 -07:00 [INF] HTTP GET /api/v1/feed/home responded 200 in 255.8454 ms
+2026-07-17 14:36:37.733 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-9588-7e1c-b138-098134567940/impression responded 200 in 345.3339 ms
+2026-07-17 14:36:37.733 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-958a-7a15-a575-98aaa0e56c88/impression responded 200 in 344.8428 ms
+2026-07-17 14:36:37.735 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-956b-7a5e-b9d8-0ef3c1dcd66d/impression responded 200 in 347.2459 ms
+2026-07-17 14:36:41.542 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-9589-76dd-a1a8-4c3bf2cfc076/impression responded 204 in 0.7300 ms
+2026-07-17 14:36:41.542 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-958b-7d8a-a9a6-0f853bb35f0f/impression responded 204 in 0.7312 ms
+2026-07-17 14:36:41.560 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-9589-76dd-a1a8-4c3bf2cfc076/impression responded 200 in 13.6148 ms
+2026-07-17 14:36:41.560 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-958b-7d8a-a9a6-0f853bb35f0f/impression responded 200 in 13.6917 ms
+2026-07-17 14:36:41.906 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-9586-79ca-a9e4-063106266335/impression responded 204 in 0.1125 ms
+2026-07-17 14:36:41.913 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-9586-79ca-a9e4-063106266335/impression responded 200 in 5.1149 ms
+2026-07-17 14:36:45.737 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-9588-7e1c-b138-098134567940/impression responded 204 in 0.1358 ms
+2026-07-17 14:36:45.737 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-958a-7a15-a575-98aaa0e56c88/impression responded 204 in 0.1552 ms
+2026-07-17 14:36:45.767 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-9588-7e1c-b138-098134567940/impression responded 200 in 27.5071 ms
+2026-07-17 14:36:45.774 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-958a-7a15-a575-98aaa0e56c88/impression responded 200 in 34.2151 ms
+2026-07-17 14:36:46.105 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-956b-7a5e-b9d8-0ef3c1dcd66d/impression responded 204 in 0.1528 ms
+2026-07-17 14:36:46.116 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-956b-7a5e-b9d8-0ef3c1dcd66d/impression responded 200 in 8.7123 ms
+2026-07-17 14:36:49.942 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-958b-7d8a-a9a6-0f853bb35f0f/impression responded 204 in 0.2405 ms
+2026-07-17 14:36:49.942 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-9589-76dd-a1a8-4c3bf2cfc076/impression responded 204 in 0.2457 ms
+2026-07-17 14:36:49.952 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-958b-7d8a-a9a6-0f853bb35f0f/impression responded 200 in 7.7567 ms
+2026-07-17 14:36:49.952 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-9589-76dd-a1a8-4c3bf2cfc076/impression responded 200 in 8.4243 ms
+2026-07-17 14:36:50.304 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-9586-79ca-a9e4-063106266335/impression responded 204 in 0.3303 ms
+2026-07-17 14:36:50.316 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-9586-79ca-a9e4-063106266335/impression responded 200 in 8.8741 ms
+2026-07-17 14:36:54.140 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-9588-7e1c-b138-098134567940/impression responded 204 in 0.1221 ms
+2026-07-17 14:36:54.140 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-958a-7a15-a575-98aaa0e56c88/impression responded 204 in 0.1500 ms
+2026-07-17 14:36:54.176 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-958a-7a15-a575-98aaa0e56c88/impression responded 200 in 33.8839 ms
+2026-07-17 14:36:54.176 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-9588-7e1c-b138-098134567940/impression responded 200 in 34.1617 ms
+2026-07-17 14:36:54.503 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-956b-7a5e-b9d8-0ef3c1dcd66d/impression responded 204 in 0.0832 ms
+2026-07-17 14:36:54.516 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-956b-7a5e-b9d8-0ef3c1dcd66d/impression responded 200 in 11.1393 ms
+2026-07-17 14:36:58.332 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-958b-7d8a-a9a6-0f853bb35f0f/impression responded 204 in 0.1371 ms
+2026-07-17 14:36:58.332 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-9589-76dd-a1a8-4c3bf2cfc076/impression responded 204 in 0.1328 ms
+2026-07-17 14:36:58.351 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-9589-76dd-a1a8-4c3bf2cfc076/impression responded 200 in 16.3883 ms
+2026-07-17 14:36:58.351 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-958b-7d8a-a9a6-0f853bb35f0f/impression responded 200 in 16.2484 ms
+2026-07-17 14:36:58.700 -07:00 [INF] HTTP OPTIONS /api/v1/ads/019f6751-9586-79ca-a9e4-063106266335/impression responded 204 in 0.0427 ms
+2026-07-17 14:36:58.705 -07:00 [INF] HTTP POST /api/v1/ads/019f6751-9586-79ca-a9e4-063106266335/impression responded 200 in 3.7058 ms
+2026-07-17 14:37:02.030 -07:00 [INF] HTTP OPTIONS /api/v1/auth/providers responded 204 in 2.9995 ms
+2026-07-17 14:37:02.030 -07:00 [INF] HTTP OPTIONS /api/v1/auth/providers responded 204 in 4.4937 ms
+2026-07-17 14:37:02.111 -07:00 [INF] HTTP GET /api/v1/auth/providers responded 200 in 64.4621 ms
+2026-07-17 14:37:02.111 -07:00 [INF] HTTP GET /api/v1/auth/providers responded 200 in 64.4127 ms
+2026-07-17 14:37:03.314 -07:00 [INF] HTTP GET /api/v1/auth/external/google responded 302 in 25.6265 ms
+2026-07-17 14:37:06.781 -07:00 [INF] HTTP GET /api/v1/auth/external/google/callback responded 302 in 699.0876 ms
+2026-07-17 14:37:07.609 -07:00 [INF] HTTP OPTIONS /api/v1/favorites responded 204 in 0.2011 ms
+2026-07-17 14:37:07.609 -07:00 [INF] HTTP OPTIONS /api/v1/messages responded 204 in 0.0117 ms
+2026-07-17 14:37:07.609 -07:00 [INF] HTTP OPTIONS /api/v1/notifications responded 204 in 0.0102 ms
+2026-07-17 14:37:07.621 -07:00 [INF] HTTP GET /api/v1/site-settings responded 200 in 28.0205 ms
+2026-07-17 14:37:07.701 -07:00 [INF] HTTP GET /api/v1/notifications responded 200 in 86.2985 ms
+2026-07-17 14:37:07.702 -07:00 [INF] HTTP GET /api/v1/favorites responded 200 in 81.2235 ms
+2026-07-17 14:37:07.818 -07:00 [INF] HTTP GET /api/v1/messages responded 200 in 197.8076 ms
+2026-07-17 14:37:08.556 -07:00 [INF] HTTP GET /api/v1/site-settings responded 200 in 7.1701 ms
+2026-07-17 14:37:08.584 -07:00 [INF] HTTP OPTIONS /api/v1/favorites responded 204 in 0.0612 ms
+2026-07-17 14:37:08.584 -07:00 [INF] HTTP OPTIONS /api/v1/notifications responded 204 in 0.0127 ms
+2026-07-17 14:37:08.584 -07:00 [INF] HTTP OPTIONS /api/v1/messages responded 204 in 0.0283 ms
+2026-07-17 14:37:08.584 -07:00 [INF] HTTP OPTIONS /api/v1/users/me responded 204 in 0.0120 ms
+2026-07-17 14:37:08.591 -07:00 [INF] HTTP GET /api/v1/favorites responded 200 in 5.0349 ms
+2026-07-17 14:37:08.592 -07:00 [INF] HTTP GET /api/v1/notifications responded 200 in 5.8778 ms
+2026-07-17 14:37:08.595 -07:00 [INF] HTTP GET /api/v1/messages responded 200 in 8.5877 ms
+2026-07-17 14:37:08.617 -07:00 [INF] HTTP GET /api/v1/users/me responded 200 in 30.3823 ms
+2026-07-17 14:37:10.995 -07:00 [INF] HTTP OPTIONS /api/v1/notifications responded 204 in 0.3558 ms
+2026-07-17 14:37:11.013 -07:00 [INF] HTTP GET /api/v1/notifications responded 200 in 11.4422 ms
+2026-07-17 14:37:11.810 -07:00 [INF] HTTP OPTIONS /api/v1/packages responded 204 in 0.1678 ms
+2026-07-17 14:37:11.811 -07:00 [INF] HTTP OPTIONS /api/v1/packages responded 204 in 0.0328 ms
+2026-07-17 14:37:11.813 -07:00 [INF] HTTP OPTIONS /api/v1/categories responded 204 in 3.0422 ms
+2026-07-17 14:37:11.814 -07:00 [INF] HTTP OPTIONS /api/v1/billing/providers responded 204 in 0.3358 ms
+2026-07-17 14:37:11.814 -07:00 [INF] HTTP OPTIONS /api/v1/categories responded 204 in 5.0832 ms
+2026-07-17 14:37:11.814 -07:00 [INF] HTTP OPTIONS /api/v1/billing/providers responded 204 in 0.0515 ms
+2026-07-17 14:37:11.840 -07:00 [INF] HTTP GET /api/v1/billing/providers responded 200 in 7.5894 ms
+2026-07-17 14:37:11.842 -07:00 [INF] HTTP GET /api/v1/packages responded 200 in 18.1947 ms
+2026-07-17 14:37:11.842 -07:00 [INF] HTTP GET /api/v1/billing/providers responded 200 in 10.5790 ms
+2026-07-17 14:37:11.843 -07:00 [INF] HTTP GET /api/v1/packages responded 200 in 25.5221 ms
+2026-07-17 14:37:11.845 -07:00 [INF] HTTP GET /api/v1/categories responded 200 in 12.1740 ms
+2026-07-17 14:37:11.845 -07:00 [INF] HTTP GET /api/v1/categories responded 200 in 13.4649 ms
+2026-07-17 14:37:14.242 -07:00 [INF] HTTP OPTIONS /api/v1/user-locations responded 204 in 0.1151 ms
+2026-07-17 14:37:14.242 -07:00 [INF] HTTP OPTIONS /api/v1/user-locations responded 204 in 0.1153 ms
+2026-07-17 14:37:14.306 -07:00 [INF] HTTP GET /api/v1/user-locations responded 200 in 62.0452 ms
+2026-07-17 14:37:14.306 -07:00 [INF] HTTP GET /api/v1/user-locations responded 200 in 62.0594 ms
+2026-07-17 14:37:22.083 -07:00 [INF] HTTP OPTIONS /api/v1/billing/stripe/payment-intent responded 204 in 0.0791 ms
+2026-07-17 14:37:22.083 -07:00 [INF] HTTP OPTIONS /api/v1/billing/stripe/payment-intent responded 204 in 0.0790 ms
+2026-07-17 14:37:22.363 -07:00 [ERR] HTTP POST /api/v1/billing/stripe/payment-intent responded 502 in 270.8975 ms
+2026-07-17 14:37:22.363 -07:00 [ERR] HTTP POST /api/v1/billing/stripe/payment-intent responded 502 in 266.0343 ms
+2026-07-17 14:38:16.802 -07:00 [INF] HTTP OPTIONS /api/v1/billing/stripe/payment-intent responded 204 in 3.9195 ms
+2026-07-17 14:38:16.802 -07:00 [INF] HTTP OPTIONS /api/v1/billing/stripe/payment-intent responded 204 in 4.3592 ms
+2026-07-17 14:38:16.974 -07:00 [ERR] HTTP POST /api/v1/billing/stripe/payment-intent responded 502 in 133.9299 ms
+2026-07-17 14:38:16.974 -07:00 [ERR] HTTP POST /api/v1/billing/stripe/payment-intent responded 502 in 150.4192 ms

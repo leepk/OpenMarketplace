@@ -56,9 +56,66 @@ public sealed class AdminController(AppDbContext db) : ControllerBase
             sellers.TryGetValue(x.SellerId, out var seller);
             categories.TryGetValue(x.CategoryId, out var category);
             images.TryGetValue(x.Id, out var imageUrl);
-            return new { x.Id, x.Title, x.Price, x.Currency, x.Status, x.ModerationStatus, x.City, x.State, x.CreatedAt, x.PublishedAt, x.ExpiresAt, Seller = seller, Category = category, ImageUrl = imageUrl ?? "" };
+            return new { x.Id, x.Title, x.Price, x.Currency, x.Status, x.ModerationStatus, x.City, x.State, x.CreatedAt, x.PublishedAt, x.ExpiresAt, x.PackageCode, x.PackageStatus, x.PackageStartsAt, x.PackageEndsAt, Seller = seller, Category = category, ImageUrl = imageUrl ?? "" };
         });
         return Ok(ApiResponse<object>.Ok(new{items,total,page,pageSize},HttpContext.TraceIdentifier));
+    }
+
+    [HttpGet("listings/{id:guid}")]
+    public async Task<ActionResult<ApiResponse<object>>> ListingDetail(Guid id, CancellationToken ct)
+    {
+        var listing = await db.Listings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (listing is null) return NotFound(ApiResponse<object>.Fail("NotFound", "Listing not found", HttpContext.TraceIdentifier));
+        var seller = await db.UserProfiles.AsNoTracking().Where(x => x.Id == listing.SellerId).Select(x => new { x.Id, x.Name, x.Email, x.Phone, x.Status }).FirstOrDefaultAsync(ct);
+        var category = await db.Categories.AsNoTracking().Where(x => x.Id == listing.CategoryId).Select(x => new { x.Id, x.Name, x.Code }).FirstOrDefaultAsync(ct);
+        var media = await db.MediaAssets.AsNoTracking().Where(x => x.ListingId == id && !x.IsDeleted).OrderBy(x => x.CreatedAt).Select(x => new { x.Id, x.Url }).ToListAsync(ct);
+        var package = await db.Packages.AsNoTracking().Where(x => !x.IsDeleted && x.Code == listing.PackageCode).Select(x => new { x.Id, x.Code, x.Name, x.Price, x.Currency, x.DurationDays, x.IsActive }).FirstOrDefaultAsync(ct);
+        return Ok(ApiResponse<object>.Ok(new { listing, seller, category, media, package }, HttpContext.TraceIdentifier));
+    }
+
+    [HttpPost("listings/{id:guid}/admin-update")]
+    public async Task<ActionResult<ApiResponse<object>>> AdminUpdateListing(Guid id, AdminListingUpdateRequest request, CancellationToken ct)
+    {
+        var listing = await db.Listings.FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (listing is null) return NotFound(ApiResponse<object>.Fail("NotFound", "Listing not found", HttpContext.TraceIdentifier));
+
+        if (!string.IsNullOrWhiteSpace(request.Status))
+        {
+            var requested = request.Status.Trim();
+            listing.Status = requested.Equals("Active", StringComparison.OrdinalIgnoreCase) || requested.Equals("Approved", StringComparison.OrdinalIgnoreCase)
+                ? "Published" : requested;
+            listing.ModerationStatus = listing.Status.Equals("Published", StringComparison.OrdinalIgnoreCase) ? "Approved"
+                : listing.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase) ? "Pending"
+                : listing.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase) || listing.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase) ? "Rejected"
+                : listing.ModerationStatus;
+            if (listing.Status == "Published") listing.PublishedAt ??= DateTimeOffset.UtcNow;
+        }
+
+        if (request.PackageCode is not null)
+        {
+            var code = request.PackageCode.Trim().ToUpperInvariant();
+            var package = await db.Packages.AsNoTracking().FirstOrDefaultAsync(x => !x.IsDeleted && x.Code == code, ct);
+            if (package is null) return BadRequest(ApiResponse<object>.Fail("Validation", "Selected package does not exist", HttpContext.TraceIdentifier));
+            listing.PackageCode = package.Code;
+            listing.PackageStatus = "Active";
+            listing.PackageStartsAt = request.PackageStartsAt ?? DateTimeOffset.UtcNow;
+            listing.PackageEndsAt = request.PackageEndsAt ?? listing.PackageStartsAt.Value.AddDays(package.DurationDays);
+            listing.ExpiresAt = request.ExpiresAt ?? listing.PackageEndsAt;
+            listing.IsFeatured = package.Code.Contains("PREMIUM", StringComparison.OrdinalIgnoreCase) || package.Code.Contains("FEATURE", StringComparison.OrdinalIgnoreCase);
+        }
+        else
+        {
+            if (request.PackageStartsAt.HasValue) listing.PackageStartsAt = request.PackageStartsAt;
+            if (request.PackageEndsAt.HasValue) listing.PackageEndsAt = request.PackageEndsAt;
+            if (request.ExpiresAt.HasValue) listing.ExpiresAt = request.ExpiresAt;
+        }
+
+        if (request.ExpiresAt.HasValue) listing.ExpiresAt = request.ExpiresAt;
+        listing.PackageStatus = listing.PackageEndsAt.HasValue && listing.PackageEndsAt.Value <= DateTimeOffset.UtcNow ? "Expired" : listing.PackageStatus;
+        listing.UpdatedAt = DateTimeOffset.UtcNow;
+        db.AuditLogs.Add(new AuditLog { ActorId = request.AdminId, Action = "Listing package/status updated", EntityType = "Listing", EntityId = id, Details = $"Status={listing.Status}; Package={listing.PackageCode}; ExpiresAt={listing.ExpiresAt:O}" });
+        await db.SaveChangesAsync(ct);
+        return Ok(ApiResponse<object>.Ok(new { listing }, HttpContext.TraceIdentifier));
     }
 
     [HttpPost("listings/{id:guid}/moderate")]
@@ -1072,6 +1129,7 @@ public sealed record AdminCategoryRequest(Guid? AdminId, string? Name, string? S
 public sealed record CategoryStatusRequest(Guid? AdminId, bool? IsActive, string? Status);
 public sealed record UpdateUserRoleSourceRequest(Guid? AdminId, string Role, string Source, string? Status);
 public sealed record UpdateListingStatusRequest(Guid? AdminId, string? Status, string? Reason);
+public sealed record AdminListingUpdateRequest(Guid? AdminId, string? Status, string? PackageCode, DateTimeOffset? PackageStartsAt, DateTimeOffset? PackageEndsAt, DateTimeOffset? ExpiresAt);
 public sealed record AdminUserRequest(Guid? AdminId, string? Name, string? Email, string? Phone, string? Location, string? AvatarUrl, string? Role, string? Source, string? Status, string? Password, bool? EmailVerified, bool? PhoneVerified, bool? IdVerified, bool? BusinessVerified, int? TrustScore);
 public sealed record UserStatusRequest(Guid? AdminId, string? Status, bool? IsActive);
 public sealed record ModerateRequest(Guid? AdminId, string Decision, string? Reason);

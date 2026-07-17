@@ -148,6 +148,8 @@ public sealed class ListingsController(AppDbContext db, IContentModerationServic
     [HttpPost]
     public async Task<ActionResult<ApiResponse<Listing>>> Create(CreateListingRequest request, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(request.City) || string.IsNullOrWhiteSpace(request.AddressLine))
+            return BadRequest(ApiResponse<Listing>.Fail("Validation", "City and address or pickup area are required", HttpContext.TraceIdentifier));
         var normalizedPackageCode = NormalizePackageCode(request.PackageCode);
         var package = await db.Packages.AsNoTracking()
             .FirstOrDefaultAsync(x => (request.PackageId.HasValue && x.Id == request.PackageId.Value) || (x.Code == normalizedPackageCode && x.IsActive && !x.IsDeleted), ct);
@@ -189,6 +191,7 @@ public sealed class ListingsController(AppDbContext db, IContentModerationServic
         ApplyModeration(listing, moderationResult, packageStatus);
         db.Listings.Add(listing);
         db.ListingModerationResults.Add(ToModerationEntity(listing.Id, "Text", moderationResult));
+        await SaveUserLocationAsync(listing, ct);
         db.Notifications.Add(new Notification
         {
             UserId = listing.SellerId,
@@ -229,6 +232,7 @@ public sealed class ListingsController(AppDbContext db, IContentModerationServic
         ApplyModeration(listing, moderationResult, listing.PackageStatus);
         listing.UpdatedAt = DateTimeOffset.UtcNow;
         db.ListingModerationResults.Add(ToModerationEntity(listing.Id, "Text", moderationResult));
+        await SaveUserLocationAsync(listing, ct);
         await db.SaveChangesAsync(ct);
         return Ok(ApiResponse<Listing>.Ok(listing, HttpContext.TraceIdentifier));
     }
@@ -393,6 +397,21 @@ public sealed class ListingsController(AppDbContext db, IContentModerationServic
         RawResponse = result.RawResponse
     };
 
+    private async Task SaveUserLocationAsync(Listing listing, CancellationToken ct)
+    {
+        if (listing.SellerId == Guid.Empty || string.IsNullOrWhiteSpace(listing.City) || string.IsNullOrWhiteSpace(listing.AddressLine)) return;
+        var city = listing.City.Trim(); var address = listing.AddressLine.Trim();
+        var normalizedCity = city.ToLower(); var normalizedAddress = address.ToLower();
+        var saved = await db.UserLocations.FirstOrDefaultAsync(x => x.UserId == listing.SellerId && !x.IsDeleted && x.City.ToLower() == normalizedCity && x.AddressLine.ToLower() == normalizedAddress, ct);
+        if (saved is null)
+        {
+            saved = new OpenMarketplace.Domain.Locations.UserLocation { UserId = listing.SellerId, CreatedBy = listing.SellerId };
+            db.UserLocations.Add(saved);
+        }
+        saved.Label = $"{address}, {city}"; saved.AddressLine = address; saved.City = city; saved.State = listing.State; saved.PostalCode = listing.PostalCode; saved.Country = listing.Country;
+        saved.Latitude = listing.Latitude; saved.Longitude = listing.Longitude; saved.UseCount++; saved.LastUsedAt = DateTimeOffset.UtcNow; saved.UpdatedAt = DateTimeOffset.UtcNow; saved.UpdatedBy = listing.SellerId;
+    }
+
     private static string BuildDisplayLocation(CreateListingRequest request)
     {
         if (!string.IsNullOrWhiteSpace(request.Location)) return request.Location.Trim();
@@ -407,6 +426,7 @@ public sealed class ListingsController(AppDbContext db, IContentModerationServic
     {
         var source = (value ?? "Manual").Trim();
         return source.Equals("Geocoded", StringComparison.OrdinalIgnoreCase) ? "Geocoded"
+            : source.Equals("SavedLocation", StringComparison.OrdinalIgnoreCase) ? "SavedLocation"
             : source.Equals("PinAdjusted", StringComparison.OrdinalIgnoreCase) ? "PinAdjusted"
             : source.Equals("CurrentLocation", StringComparison.OrdinalIgnoreCase) ? "CurrentLocation"
             : "Manual";

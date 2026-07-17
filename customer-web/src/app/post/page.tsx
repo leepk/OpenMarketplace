@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { marketplaceApi, type CategoryDto, type PackageDto, type PaymentProviderDto } from '@/lib/api/apiClient';
+import { marketplaceApi, type CategoryDto, type PackageDto, type PaymentProviderDto, type UserLocationDto } from '@/lib/api/apiClient';
 import { getSessionUser } from '@/lib/api/session';
 import { Icon } from '@/components/ui/Icon';
 import { useI18n } from '@/lib/i18n/client';
+import { StripePaymentElement } from '@/components/payment/StripePaymentElement';
+import { PayPalButtons } from '@/components/payment/PayPalButtons';
 
 const steps = [
   { id: 1, title: 'Details', hint: 'Title & category' },
@@ -28,11 +30,6 @@ const defaultPaymentProviders: PaymentProviderDto[] = [
   { code: 'TEST', name: 'TEST', type: 'TEST', displayName: 'Manual/Test payment', isTestMode: true },
 ];
 
-function providerIcon(type?: string) {
-  const t = (type ?? '').toLowerCase();
-  if (t.includes('manual') || t.includes('test')) return '✓';
-  return '✓';
-}
 
 function isRealPaymentProvider(provider?: PaymentProviderDto | null) {
   const value = `${provider?.type ?? ''} ${provider?.code ?? ''} ${provider?.name ?? ''}`.toLowerCase();
@@ -108,6 +105,8 @@ export default function PostListingPage() {
   const { t, category, packageLabel, paymentProviderLabel } = useI18n();
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [packages, setPackages] = useState<PackageDto[]>([]);
+  const [savedLocations, setSavedLocations] = useState<UserLocationDto[]>([]);
+  const [selectedSavedLocationId, setSelectedSavedLocationId] = useState('');
   const [packagesLoading, setPackagesLoading] = useState(true);
   const [paymentProviders, setPaymentProviders] = useState<PaymentProviderDto[]>(defaultPaymentProviders);
   const [selectedProviderCode, setSelectedProviderCode] = useState('TEST');
@@ -133,14 +132,14 @@ export default function PostListingPage() {
     condition: 'Like New',
     description: '',
     price: '',
-    location: 'San Jose, CA',
+    location: '',
     addressLine: '',
-    city: 'San Jose',
+    city: '',
     state: 'CA',
     postalCode: '',
     country: 'US',
-    latitude: '37.3382',
-    longitude: '-121.8863',
+    latitude: '',
+    longitude: '',
     locationSource: 'Manual',
     locationPrecision: 'ApproximateCity',
     hideExactLocation: true,
@@ -149,6 +148,20 @@ export default function PostListingPage() {
   });
 
   useEffect(() => {
+    const sessionUser = getSessionUser();
+    if (sessionUser?.id) {
+      const loadSavedLocations = (coords?: { latitude?: number; longitude?: number }) => marketplaceApi.userLocations(sessionUser.id, coords).then((items) => {
+        setSavedLocations(items ?? []);
+        const nearest = items?.[0];
+        if (nearest) {
+          setSelectedSavedLocationId(nearest.id);
+          setForm((current) => ({ ...current, addressLine: nearest.addressLine ?? '', city: nearest.city ?? '', state: nearest.state ?? 'CA', postalCode: nearest.postalCode ?? '', country: nearest.country ?? 'US', latitude: nearest.latitude != null ? String(nearest.latitude) : '', longitude: nearest.longitude != null ? String(nearest.longitude) : '', location: buildLocationLabel(nearest.city ?? '', nearest.state ?? 'CA', nearest.postalCode ?? '', nearest.label ?? ''), locationSource: 'SavedLocation' }));
+        }
+      }).catch(() => setSavedLocations([]));
+      if (navigator.geolocation) navigator.geolocation.getCurrentPosition((pos) => loadSavedLocations({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }), () => loadSavedLocations(), { timeout: 6000 });
+      else loadSavedLocations();
+    }
+
     marketplaceApi.categories()
       .then((items) => {
         setCategories(items);
@@ -167,7 +180,7 @@ export default function PostListingPage() {
 
     marketplaceApi.paymentProviders()
       .then((items) => {
-        const enabled = (items ?? []).filter((p) => p.code && !isRealPaymentProvider(p));
+        const enabled = (items ?? []).filter((p) => p.code);
         setPaymentProviders(enabled.length ? enabled : defaultPaymentProviders);
         setSelectedProviderCode((current) => enabled.some(p => p.code === current) ? current : (enabled[0]?.code ?? 'TEST'));
       })
@@ -235,22 +248,25 @@ export default function PostListingPage() {
   function useCurrentLocation() {
     if (!navigator.geolocation) { setError('Current location is not available in this browser.'); return; }
     navigator.geolocation.getCurrentPosition(
-      (pos) => setForm((current) => ({
-        ...current,
-        latitude: String(pos.coords.latitude.toFixed(6)),
-        longitude: String(pos.coords.longitude.toFixed(6)),
-        location: buildLocationLabel(current.city, current.state, current.postalCode, current.location),
-        locationSource: 'CurrentLocation',
-        locationPrecision: current.hideExactLocation ? 'ApproximateCity' : 'Exact',
-      })),
+      (pos) => {
+        setSelectedSavedLocationId('');
+        setForm((current) => ({
+          ...current,
+          latitude: String(pos.coords.latitude.toFixed(6)),
+          longitude: String(pos.coords.longitude.toFixed(6)),
+          location: buildLocationLabel(current.city, current.state || 'CA', current.postalCode, current.location),
+          locationSource: 'CurrentLocation',
+          locationPrecision: current.hideExactLocation ? 'ApproximateCity' : 'Exact',
+        }));
+      },
       () => setError('Could not read current location. Please search by address/city.'),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }
 
   function nudgePin(latDelta: number, lngDelta: number) {
-    const lat = hasCoordinates ? latitudeNumber : 37.3382;
-    const lng = hasCoordinates ? longitudeNumber : -121.8863;
+    const lat = hasCoordinates ? latitudeNumber : 0;
+    const lng = hasCoordinates ? longitudeNumber : 0;
     setForm((current) => ({
       ...current,
       latitude: String((lat + latDelta).toFixed(6)),
@@ -270,16 +286,17 @@ export default function PostListingPage() {
 
   function canMoveNext() {
     if (step === 1) return Boolean(form.title.trim() && form.categoryId && form.description.trim());
-    if (step === 3) return Boolean(form.price && form.location.trim() && form.packageCode);
+    if (step === 3) return Boolean(form.price && form.city.trim() && form.addressLine.trim() && form.packageCode);
     if (step === 4 && selectedPackagePrice > 0) {
       const type = (selectedProvider?.type ?? '').toLowerCase();
       if (type.includes('test') || type.includes('manual') || !type) return Boolean(payment.testStatus);
-      return false;
+      if (type.includes('stripe') || type.includes('paypal')) return Boolean(selectedProvider?.configured !== false);
+      return Boolean(selectedProvider?.configured !== false);
     }
     return true;
   }
 
-  async function submit() {
+  async function submit(gateway?: { providerCode: 'STRIPE' | 'PAYPAL'; token: string; status: 'succeeded' }) {
     setError('');
     setSaved('');
     setSavedId('');
@@ -299,7 +316,7 @@ export default function PostListingPage() {
         description: `${form.description.trim()}\n\nCondition: ${form.condition}\nContact preference: ${form.contactPreference}\nPackage: ${selectedPackage?.name ?? form.packageCode}`,
         price: Number(form.price || 0),
         currency: 'USD',
-        location: publicLocation || form.location.trim() || 'San Jose, CA',
+        location: publicLocation || form.location.trim(),
         packageCode: form.packageCode,
         packageId: selectedPackage?.id,
         addressLine: form.hideExactLocation ? '' : form.addressLine.trim(),
@@ -315,21 +332,22 @@ export default function PostListingPage() {
       });
 
       const providerType = (selectedProvider?.type ?? 'Test').toLowerCase();
+      const effectiveProviderCode = gateway?.providerCode ?? (selectedPackagePrice > 0 ? selectedProviderCode : 'FREE');
       const checkout = await marketplaceApi.checkout({
         userId: user.id,
         listingId: listing.id,
         packageId: selectedPackage?.id,
         packageCode: form.packageCode,
         amount: selectedPackagePrice,
-        paymentMethod: selectedPackagePrice > 0 ? selectedProvider?.type ?? selectedProviderCode : 'Free',
-        providerCode: selectedPackagePrice > 0 ? selectedProviderCode : 'FREE',
-        providerStatus: providerType.includes('test') ? payment.testStatus : 'success',
-        paymentToken: selectedPackagePrice > 0 ? `${selectedProviderCode.toLowerCase()}-${Date.now()}` : 'free',
+        paymentMethod: selectedPackagePrice > 0 ? selectedProvider?.type ?? effectiveProviderCode : 'Free',
+        providerCode: effectiveProviderCode,
+        providerStatus: gateway?.status ?? (providerType.includes('test') || providerType.includes('manual') ? payment.testStatus : 'pending'),
+        paymentToken: gateway?.token ?? (selectedPackagePrice > 0 ? `${effectiveProviderCode.toLowerCase()}-${Date.now()}` : 'free'),
         providerPayload: JSON.stringify({
-          provider: selectedProviderCode,
+          provider: effectiveProviderCode,
           type: selectedProvider?.type,
           testReference: payment.testReference,
-          paymentNote: 'Real Stripe/PayPal checkout is not enabled yet.',
+          paymentNote: gateway ? 'Gateway payment completed and verified server-side.' : 'Manual/test payment.',
         }),
       });
 
@@ -399,8 +417,9 @@ export default function PostListingPage() {
               <div className="listing-location-picker-v2">
                 <div className="location-picker-head-v2"><div><span>{t('listingLocation')}</span><h3>{t('showBuyersLocation')}</h3></div><button type="button" className="secondary-button" onClick={useCurrentLocation}>{t('useCurrentLocation')}</button></div>
                 <div className="post-grid-v2 compact">
-                  <label className="full">{t('addressPickupArea')}<input value={form.addressLine} onChange={(e)=>update('addressLine', e.target.value)} placeholder={t('addressPickupPlaceholder')} /></label>
-                  <label>{t('city')} *<input value={form.city} onChange={(e)=>{ update('city', e.target.value); update('location', buildLocationLabel(e.target.value, form.state, form.postalCode, form.location)); }} required /></label>
+                  {savedLocations.length > 0 && <label className="full">{t('savedLocations')}<select value={selectedSavedLocationId} onChange={(e)=>{ const selected=savedLocations.find(x=>x.id===e.target.value); setSelectedSavedLocationId(e.target.value); if(!selected) return; setForm(current=>({ ...current, addressLine:selected.addressLine ?? '', city:selected.city ?? '', state:selected.state ?? 'CA', postalCode:selected.postalCode ?? '', country:selected.country ?? 'US', latitude:selected.latitude!=null?String(selected.latitude):'', longitude:selected.longitude!=null?String(selected.longitude):'', location:buildLocationLabel(selected.city ?? '', selected.state ?? 'CA', selected.postalCode ?? '', selected.label ?? ''), locationSource:'SavedLocation' })); const user=getSessionUser(); if(user?.id) marketplaceApi.markUserLocationUsed(selected.id,user.id).catch(()=>{}); }}><option value="">{t('enterNewLocation')}</option>{savedLocations.map(x=><option key={x.id} value={x.id}>{x.label || `${x.addressLine}, ${x.city}`}{x.distanceMiles!=null?` (${x.distanceMiles.toFixed(1)} mi)`:''}</option>)}</select></label>}
+                  <label className="full">{t('addressPickupArea')} *<input value={form.addressLine} onChange={(e)=>{ setSelectedSavedLocationId(''); update('addressLine', e.target.value); }} placeholder={t('addressPickupPlaceholder')} required /></label>
+                  <label>{t('city')} *<input value={form.city} onChange={(e)=>{ setSelectedSavedLocationId(''); update('city', e.target.value); update('location', buildLocationLabel(e.target.value, form.state, form.postalCode, form.location)); }} placeholder="San Jose" required /></label>
                   <label>{t('state')}<input value={form.state} onChange={(e)=>{ update('state', e.target.value); update('location', buildLocationLabel(form.city, e.target.value, form.postalCode, form.location)); }} /></label>
                   <label>ZIP<input value={form.postalCode} onChange={(e)=>{ update('postalCode', e.target.value); update('location', buildLocationLabel(form.city, form.state, e.target.value, form.location)); }} /></label>
                   <label>{t('country')}<input value={form.country} onChange={(e)=>update('country', e.target.value)} /></label>
@@ -456,24 +475,35 @@ export default function PostListingPage() {
               </div>
 
               {selectedPackagePrice > 0 ? <div className="checkout-provider-panel-v2">
-                <div className="checkout-card-head-v2"><Icon name="shield" size={20} /><div><strong>{t('choosePaymentMethod')}</strong><small>{t('providersLoaded')}</small></div></div>
-                <div className="provider-card-list-v2">
-                  {enabledPaymentProviders.map((provider) => {
-                    const active = provider.code === selectedProviderCode;
-                    return <button key={provider.code} type="button" className={`provider-option-v2 ${active ? 'active' : ''}`} onClick={() => setSelectedProviderCode(provider.code)}>
-                      <span>{providerIcon(provider.type)}</span>
-                      <div><strong>{paymentProviderLabel(provider.displayName ?? provider.code ?? provider.name)}</strong><small>{t('paymentNotActivated')}</small></div>
-                      <b>{active ? t('selected') : t('select')}</b>
-                    </button>;
-                  })}
-                </div>
-
-                <div className="provider-form-v2 test-provider-form-v2">
+                {(selectedProvider?.type ?? selectedProvider?.code ?? '').toLowerCase().includes('stripe') ? <div className="provider-form-v2 gateway-provider-form-v2">
+                  <div className="provider-form-title"><strong>{paymentProviderLabel(selectedProvider.displayName ?? selectedProvider.code)}</strong><small>{selectedProvider.currency ?? 'USD'} · Stripe secure checkout</small></div>
+                  {selectedProvider.publishableKey && getSessionUser()?.id ? <StripePaymentElement
+                    publishableKey={selectedProvider.publishableKey}
+                    userId={getSessionUser()!.id}
+                    packageId={selectedPackage?.id}
+                    packageCode={form.packageCode}
+                    amountLabel={selectedPackage ? packagePrice(selectedPackage, t('free')) : ''}
+                    disabled={busy || Boolean(saved)}
+                    onError={setError}
+                    onSuccess={(paymentIntentId) => submit({ providerCode: 'STRIPE', token: paymentIntentId, status: 'succeeded' })}
+                  /> : <div className="gateway-error-v2">Stripe publishable key is missing.</div>}
+                </div> : (selectedProvider?.type ?? selectedProvider?.code ?? '').toLowerCase().includes('paypal') ? <div className="provider-form-v2 gateway-provider-form-v2 paypal-provider-form-v2">
+                  <div className="provider-form-title"><strong>PayPal</strong><small>{selectedProvider.mode ?? 'Sandbox'} · {selectedProvider.currency ?? 'USD'}</small></div>
+                  {selectedProvider.clientId && getSessionUser()?.id ? <PayPalButtons
+                    clientId={selectedProvider.clientId}
+                    currency={selectedProvider.currency ?? 'USD'}
+                    userId={getSessionUser()!.id}
+                    packageId={selectedPackage?.id}
+                    packageCode={form.packageCode}
+                    disabled={busy || Boolean(saved)}
+                    onError={setError}
+                    onSuccess={(orderId) => submit({ providerCode: 'PAYPAL', token: orderId, status: 'succeeded' })}
+                  /> : <div className="gateway-error-v2">PayPal client ID is missing.</div>}
+                </div> : <div className="provider-form-v2 test-provider-form-v2">
                   <div className="provider-form-title"><strong>{t('manualTestPayment')}</strong><small>{t('manualPaymentHelp')}</small></div>
                   <label>{t('status')}<select value={payment.testStatus} onChange={(e)=>setPayment({...payment, testStatus:e.target.value})}><option value="success">{t('success')}</option><option value="pending">{t('pending')}</option><option value="failed">{t('failed')}</option></select></label>
                   <label>{t('reference')}<input value={payment.testReference} onChange={(e)=>setPayment({...payment, testReference:e.target.value})} placeholder={t('manualOrderPlaceholder')} /></label>
-                  <div className="provider-coming-soon-v2"><Icon name="shield" size={16} /> {t('realCheckoutComingSoon')}</div>
-                </div>
+                </div>}
               </div> : <div className="checkout-free-v2"><Icon name="check" size={26} /><strong>{t('noPaymentRequired')}</strong><p>{t('freePublishText')}</p></div>}
             </div>}
 
@@ -488,7 +518,7 @@ export default function PostListingPage() {
             {saved && <p className="success-message-v2">{saved}</p>}
             <div className="post-actions-v2">
               <button type="button" className="secondary-button" disabled={step <= 1 || busy} onClick={() => setStep(step - 1)}>{t('back')}</button>
-              {step < 4 ? <button type="button" className="primary-button" disabled={busy || !canMoveNext()} onClick={() => setStep(step + 1)}>{t('nextStep')}</button> : step === 4 ? <button type="button" className="primary-button" disabled={busy || !canMoveNext() || Boolean(saved)} onClick={submit}>{busy ? t('processing') : selectedPackagePrice > 0 ? t('payPublish') : t('publishFreeListing')}</button> : <button type="button" className="primary-button" onClick={() => router.push('/my-listings')}>{t('goToMyListings')}</button>}
+              {step < 4 ? <button type="button" className="primary-button" disabled={busy || !canMoveNext()} onClick={() => setStep(step + 1)}>{t('nextStep')}</button> : step === 4 ? (selectedPackagePrice > 0 && isRealPaymentProvider(selectedProvider) ? <span className="gateway-action-note-v2">Complete payment above to publish.</span> : <button type="button" className="primary-button" disabled={busy || !canMoveNext() || Boolean(saved)} onClick={() => submit()}>{busy ? t('processing') : selectedPackagePrice > 0 ? t('payPublish') : t('publishFreeListing')}</button>) : <button type="button" className="primary-button" onClick={() => router.push('/my-listings')}>{t('goToMyListings')}</button>}
             </div>
           </div>
         </div>

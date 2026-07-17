@@ -14,6 +14,7 @@ export const adminRoutes: Record<AdminTab, string> = {
   settings: '/settings',
   siteSettings: '/site-settings',
   blockedWords: '/blocked-words',
+  localities: '/localities',
   health: '/system',
 };
 
@@ -50,6 +51,7 @@ export function getTabFromPath(pathname: string): AdminTab {
   if (normalized.startsWith('/reports')) return 'reports';
   if (normalized.startsWith('/site-settings')) return 'siteSettings';
   if (normalized.startsWith('/blocked-words')) return 'blockedWords';
+  if (normalized.startsWith('/localities')) return 'localities';
   if (normalized.startsWith('/settings')) return 'settings';
   if (normalized.startsWith('/system')) return 'health';
 

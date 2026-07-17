@@ -10,9 +10,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${appConfig.apiBaseUrl}${path}`, { cache: 'no-store', ...init, headers });
   const payload = await response.json().catch(() => null);
   if (response.status === 401) {
-    clearSession();
-    redirectToLogin();
-    throw new Error('Session expired. Please sign in again.');
+    const errorCode = String(payload?.error?.code ?? payload?.code ?? '').trim().toLowerCase();
+    const authenticateHeader = response.headers.get('www-authenticate') ?? '';
+    const isAuthenticationFailure =
+      authenticateHeader.toLowerCase().includes('bearer') ||
+      ['unauthorized', 'invalidtoken', 'tokenexpired', 'sessionexpired'].includes(errorCode);
+
+    // Do not destroy a valid customer session when a downstream gateway such as
+    // Stripe returns HTTP 401 for an invalid/missing provider credential.
+    if (isAuthenticationFailure) {
+      clearSession();
+      redirectToLogin();
+      throw new Error('Session expired. Please sign in again.');
+    }
   }
   if (!response.ok) throw new Error(payload?.error?.message ?? `API request failed: ${response.status}`);
   if (payload && typeof payload === 'object' && 'success' in payload) {
@@ -31,7 +41,9 @@ export function currentUserId() {
 
 export type CategoryDto = { id: string; code?: string; iconKey?: string; parentCode?: string | null; name?: string; slug?: string; description?: string; count?: number };
 export type PackageDto = { id?: string; code?: string; name: string; slug?: string; description?: string; price?: number | string | null; durationDays?: number | null; features?: string[] | string | null; isActive?: boolean; sortOrder?: number; badge?: string; };
-export type PaymentProviderDto = { id?: string; code: string; name: string; type: 'Test' | 'Stripe' | 'PayPal' | string; displayName?: string; currency?: string; isTestMode?: boolean; sortOrder?: number; publicConfigJson?: string; };
+export type PaymentProviderDto = { id?: string; code: string; name: string; type: 'Test' | 'Manual' | 'Stripe' | 'PayPal' | string; displayName?: string; currency?: string; isTestMode?: boolean; sortOrder?: number; publicConfigJson?: string; configured?: boolean; mode?: string; publishableKey?: string; clientId?: string; };
+export type CityDto = { id: string; name: string; stateCode: string; countryCode: string; latitude?: number | null; longitude?: number | null; sortOrder?: number; selectionCount?: number };
+export type UserLocationDto = { id: string; label?: string; addressLine: string; city: string; state?: string; postalCode?: string; country?: string; latitude?: number | null; longitude?: number | null; useCount?: number; lastUsedAt?: string | null; isDefault?: boolean; distanceMiles?: number | null };
 export type AdvertisementDto = { id: string; campaignId?: string; campaignName?: string; placement: string; title: string; description?: string; desktopImageUrl?: string; mobileImageUrl?: string; targetUrl?: string; openInNewTab?: boolean; sortOrder?: number };
 
 export type ListingDto = {
@@ -86,7 +98,12 @@ export const apiClient = {
 };
 
 export const marketplaceApi = {
-  home: () => apiClient.get<HomeFeed>('/feed/home'),
+  home: (params?: { latitude?: number; longitude?: number }) => { const qs = new URLSearchParams(); if (params?.latitude != null) qs.set('latitude', String(params.latitude)); if (params?.longitude != null) qs.set('longitude', String(params.longitude)); return apiClient.get<HomeFeed>(`/feed/home${qs.toString() ? `?${qs}` : ''}`); },
+  cities: () => apiClient.get<CityDto[]>('/locations/cities?state=CA&limit=1000'),
+  citySelected: (id: string) => apiClient.post(`/locations/cities/${id}/selected`, {}),
+  userLocations: (userId: string, coords?: { latitude?: number; longitude?: number }) => { const qs = new URLSearchParams({ userId }); if (coords?.latitude != null) qs.set('latitude', String(coords.latitude)); if (coords?.longitude != null) qs.set('longitude', String(coords.longitude)); return apiClient.get<UserLocationDto[]>(`/user-locations?${qs}`); },
+  saveUserLocation: (payload: { userId: string; label?: string; addressLine: string; city: string; state?: string; postalCode?: string; country?: string; latitude?: number | null; longitude?: number | null }) => apiClient.post<UserLocationDto>('/user-locations', payload),
+  markUserLocationUsed: (id: string, userId: string) => apiClient.post(`/user-locations/${id}/used`, { userId }),
   categories: () => apiClient.get<CategoryDto[]>('/categories'),
   listings: (params?: Record<string, string | number | undefined>) => {
     const qs = new URLSearchParams();
@@ -97,7 +114,33 @@ export const marketplaceApi = {
   listing: (id: string) => apiClient.get<{ listing: ListingDto; media: { url: string }[]; comments: any[]; seller?: any; category?: any }>(`/listings/${id}`),
   createListing: (payload: { sellerId: string; categoryId: string; title: string; description: string; price: number; currency: string; location: string; packageCode?: string; packageId?: string; addressLine?: string; city?: string; state?: string; postalCode?: string; country?: string; latitude?: number | null; longitude?: number | null; locationSource?: string; locationPrecision?: string; hideExactLocation?: boolean }) => apiClient.post<ListingDto>('/listings', payload),
   packages: () => apiClient.get<PackageDto[]>('/packages'),
-  paymentProviders: async () => { const data = await apiClient.get<{ items: PaymentProviderDto[] } | PaymentProviderDto[]>('/billing/providers'); return Array.isArray(data) ? data : (data.items ?? []); },
+  paymentProviders: async () => {
+    try {
+      const data = await apiClient.get<{ items: PaymentProviderDto[] } | PaymentProviderDto[]>('/billing/providers');
+      const items = Array.isArray(data) ? data : (data.items ?? []);
+      if (items.length) return items;
+    } catch {
+      // Fall through to the public settings endpoint for compatibility with older backend deployments.
+    }
+
+    const settings = await apiClient.get<any>('/payment/settings');
+    const items: PaymentProviderDto[] = [];
+    if (settings?.stripe?.enabled) items.push({
+      code: 'STRIPE', name: 'Stripe', type: 'Stripe', displayName: 'Credit / Debit Card',
+      currency: settings.currency ?? 'USD', sortOrder: 10, configured: Boolean(settings.stripe.configured),
+      publishableKey: settings.stripe.publishableKey ?? ''
+    });
+    if (settings?.paypal?.enabled) items.push({
+      code: 'PAYPAL', name: 'PayPal', type: 'PayPal', displayName: 'PayPal',
+      currency: settings.currency ?? 'USD', sortOrder: 20, configured: Boolean(settings.paypal.configured),
+      clientId: settings.paypal.clientId ?? '', mode: settings.paypal.mode ?? 'Sandbox'
+    });
+    if (settings?.manual?.enabled) items.push({
+      code: 'MANUAL', name: 'Manual', type: 'Manual', displayName: 'Manual/Test payment',
+      currency: settings.currency ?? 'USD', sortOrder: 90, configured: true, isTestMode: true
+    });
+    return items;
+  },
   ads: async (placement: string) => { const data = await apiClient.get<{ items: AdvertisementDto[] } | AdvertisementDto[]>(`/ads?placement=${encodeURIComponent(placement)}`); return Array.isArray(data) ? data : (data.items ?? []); },
   adsPlacements: async (placements?: string[]) => { const qs = placements?.length ? `?placements=${encodeURIComponent(placements.join(','))}` : ''; return apiClient.get<Record<string, AdvertisementDto[]>>(`/ads/placements${qs}`); },
   adImpression: (creativeId: string) => apiClient.post(`/ads/${creativeId}/impression`, {}),
@@ -117,6 +160,9 @@ export const marketplaceApi = {
   markConversationRead: (conversationId: string, userId = currentUserId() || DEMO_CUSTOMER_ID) => apiClient.post<any>(`/messages/${conversationId}/read`, { userId }),
   billing: (userId = currentUserId()) => apiClient.get<{ orders: any[]; payments: any[]; invoices: any[] }>(`/billing?userId=${userId}`),
   checkout: (payload: { userId: string; listingId?: string; packageId?: string; packageCode?: string; amount: number; paymentMethod?: string; paymentToken?: string; providerCode?: string; providerStatus?: string; providerPayload?: string }) => apiClient.post<any>('/billing/checkout', payload),
+  createStripePaymentIntent: (payload: { userId: string; packageId?: string; packageCode?: string }) => apiClient.post<{ paymentIntentId: string; clientSecret: string; amount: number; currency: string }>('/billing/stripe/payment-intent', payload),
+  createPayPalOrder: (payload: { userId: string; packageId?: string; packageCode?: string }) => apiClient.post<{ orderId: string }>('/billing/paypal/orders', payload),
+  capturePayPalOrder: (orderId: string) => apiClient.post<{ orderId: string; status: string }>(`/billing/paypal/orders/${encodeURIComponent(orderId)}/capture`, {}),
   me: (userId: string) => apiClient.get<any>(`/users/me?userId=${userId}`),
   saveMe: (userId: string, payload: any) => apiClient.put<any>(`/users/me?userId=${userId}`, payload),
   sendPhoneVerification: (userId: string) => apiClient.post<any>('/auth/send-phone-verification', { userId }),
