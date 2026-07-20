@@ -11,9 +11,9 @@ export function SiteFooter() {
   const logo = resolveSiteImage(site.logoUrl);
   const siteName = site.siteName || t('appName');
   const socialLinks = [
-    { label: 'f', href: site.facebookUrl },
-    { label: 'yt', href: site.youtubeUrl },
-    { label: 'ig', href: site.instagramUrl },
+    { label: 'Facebook', icon: 'f', href: site.facebookUrl },
+    { label: 'YouTube', icon: 'yt', href: site.youtubeUrl },
+    { label: 'Instagram', icon: 'ig', href: site.instagramUrl },
   ].filter(x => x.href);
   return (
     <footer className="site-footer-modern">
@@ -28,7 +28,7 @@ export function SiteFooter() {
               {site.contactAddress && <span>{site.contactAddress}</span>}
             </div>
           )}
-          <div className="footer-socials-modern">{socialLinks.map(link => <a key={link.label} href={link.href} target="_blank" rel="noreferrer">{link.label}</a>)}</div>
+          <div className="footer-socials-modern">{socialLinks.map(link => <a key={link.label} href={link.href} target="_blank" rel="noreferrer" aria-label={link.label} title={link.label}><span aria-hidden="true">{link.icon}</span></a>)}</div>
         </div>
         <div><h4>{t('marketplace')}</h4><Link href="/search">{t('browseListings')}</Link><Link href="/post">{t('postListing')}</Link><Link href="/map">{t('mapSearch')}</Link><Link href="/favorites">{t('savedListings')}</Link></div>
         <div><h4>{t('account')}</h4><Link href="/login">{t('login')}</Link><Link href="/register">{t('createAccount')}</Link><Link href="/messages">{t('messages')}</Link><Link href="/notifications">{t('notifications')}</Link></div>

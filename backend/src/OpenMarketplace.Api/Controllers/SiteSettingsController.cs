@@ -96,11 +96,25 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
     public async Task<ActionResult<ApiResponse<object>>> Admin(CancellationToken ct)
     {
         await EnsureDefaultsAsync(ct);
-        var rows = await db.AppSettings.AsNoTracking()
+        var entities = await db.AppSettings.AsNoTracking()
             .Where(x => !x.IsDeleted && (x.Key.StartsWith("site.") || x.Key.StartsWith("social.") || x.Key.StartsWith("contact.") || x.Key.StartsWith("footer.") || x.Key.StartsWith("seo.") || x.Key.StartsWith("moderation.") || x.Key.StartsWith("auth.") || x.Key.StartsWith("payment.") || x.Key.StartsWith("email.") || x.Key.StartsWith("sms.") || x.Key.StartsWith("template.")))
             .OrderBy(x => x.Key)
-            .Select(x => new { x.Id, x.Key, Value = x.ValueType == "Secret" && x.Value != "" ? "••••••••" : x.Value, x.ValueType, x.IsPublic, x.CreatedAt, x.UpdatedAt })
             .ToListAsync(ct);
+
+        // Never send a stored secret to the browser. The empty value lets the UI show a
+        // password placeholder without accidentally posting a mask back as the new secret.
+        var rows = entities.Select(x => new
+        {
+            x.Id,
+            x.Key,
+            Value = IsSecretType(x.ValueType) ? string.Empty : x.Value,
+            x.ValueType,
+            SecretConfigured = IsSecretType(x.ValueType) && !string.IsNullOrWhiteSpace(x.Value),
+            x.IsPublic,
+            x.CreatedAt,
+            x.UpdatedAt
+        }).ToList();
+
         return Ok(ApiResponse<object>.Ok(new { items = rows, settings = ToDictionary(rows), branding = ToBranding(rows) }, HttpContext.TraceIdentifier));
     }
 
@@ -122,7 +136,7 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
                 db.AppSettings.Add(setting);
             }
             var incoming = item.Value?.Trim() ?? string.Empty;
-            if (DefaultTypes.GetValueOrDefault(key) == "Secret" && (string.IsNullOrWhiteSpace(incoming) || incoming == "••••••••")) continue;
+            if (IsSecretKey(key) && (string.IsNullOrWhiteSpace(incoming) || IsMaskedSecret(incoming))) continue;
             setting.Value = incoming;
             setting.ValueType = DefaultTypes.GetValueOrDefault(key, setting.ValueType);
             setting.IsPublic = IsPublicKey(key);
@@ -146,15 +160,39 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
             db.AppSettings.Add(setting);
         }
         var incoming = request.Value?.Trim() ?? string.Empty;
-        if (DefaultTypes.GetValueOrDefault(key) == "Secret" && (string.IsNullOrWhiteSpace(incoming) || incoming == "••••••••"))
-            return Ok(ApiResponse<object>.Ok(new { setting }, HttpContext.TraceIdentifier));
+        if (IsSecretKey(key) && (string.IsNullOrWhiteSpace(incoming) || IsMaskedSecret(incoming)))
+        {
+            var preserved = new
+            {
+                setting.Id,
+                setting.Key,
+                Value = string.Empty,
+                setting.ValueType,
+                SecretConfigured = !string.IsNullOrWhiteSpace(setting.Value),
+                setting.IsPublic,
+                setting.CreatedAt,
+                setting.UpdatedAt
+            };
+            return Ok(ApiResponse<object>.Ok(new { setting = preserved }, HttpContext.TraceIdentifier));
+        }
         setting.Value = incoming;
         setting.ValueType = DefaultTypes.GetValueOrDefault(key, setting.ValueType);
         setting.IsPublic = IsPublicKey(key);
         setting.UpdatedAt = DateTimeOffset.UtcNow;
         db.AuditLogs.Add(new AuditLog { ActorId = request.AdminId, Action = $"Site setting updated: {key}", EntityType = "SiteSettings", EntityId = setting.Id });
         await db.SaveChangesAsync(ct);
-        return Ok(ApiResponse<object>.Ok(new { setting }, HttpContext.TraceIdentifier));
+        var responseSetting = new
+        {
+            setting.Id,
+            setting.Key,
+            Value = IsSecretKey(key) ? string.Empty : setting.Value,
+            setting.ValueType,
+            SecretConfigured = IsSecretKey(key) && !string.IsNullOrWhiteSpace(setting.Value),
+            setting.IsPublic,
+            setting.CreatedAt,
+            setting.UpdatedAt
+        };
+        return Ok(ApiResponse<object>.Ok(new { setting = responseSetting }, HttpContext.TraceIdentifier));
     }
 
     private async Task EnsureDefaultsAsync(CancellationToken ct)
@@ -234,6 +272,16 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         ("template.sms_verification", "{{siteName}} verification code: {{code}}", "Text"),
         ("template.sms_payment", "Payment {{amount}} received for {{orderNumber}}.", "Text")
     ];
+
+    private static bool IsSecretType(string? valueType) => string.Equals(valueType, "Secret", StringComparison.OrdinalIgnoreCase);
+    private static bool IsSecretKey(string key) => string.Equals(DefaultTypes.GetValueOrDefault(key), "Secret", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsMaskedSecret(string value)
+    {
+        var compact = new string((value ?? string.Empty).Where(c => !char.IsWhiteSpace(c)).ToArray());
+        if (compact.Length < 4) return false;
+        return compact.All(c => c is '*' or '•' or '●' or '·' or 'x' or 'X');
+    }
 
     private static string NormalizeKey(string key) => (key ?? string.Empty).Trim().ToLowerInvariant().Replace('-', '_');
     private static bool IsAllowedKey(string key) => DefaultTypes.ContainsKey(key);
