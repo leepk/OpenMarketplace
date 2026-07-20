@@ -140,22 +140,32 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IHttp
             var clientId = GetSetting(settings, "auth.google_client_id");
             var clientSecret = GetSetting(settings, "auth.google_client_secret");
             var client = httpClientFactory.CreateClient();
+            if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+                throw new InvalidOperationException("Google Client ID or Client Secret is not configured.");
+
+            var callbackUrl = BuildCallbackUrl("google");
             using var tokenResponse = await client.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["code"] = code,
-                ["client_id"] = clientId,
-                ["client_secret"] = clientSecret,
-                ["redirect_uri"] = BuildCallbackUrl("google"),
+                ["client_id"] = clientId.Trim(),
+                ["client_secret"] = clientSecret.Trim(),
+                ["redirect_uri"] = callbackUrl,
                 ["grant_type"] = "authorization_code"
             }), ct);
-            tokenResponse.EnsureSuccessStatusCode();
-            using var tokenJson = JsonDocument.Parse(await tokenResponse.Content.ReadAsStringAsync(ct));
+            var tokenBody = await tokenResponse.Content.ReadAsStringAsync(ct);
+            if (!tokenResponse.IsSuccessStatusCode)
+                throw new InvalidOperationException($"Google token exchange failed ({(int)tokenResponse.StatusCode}): {GetOAuthError(tokenBody)}");
+
+            using var tokenJson = JsonDocument.Parse(tokenBody);
             var accessToken = tokenJson.RootElement.GetProperty("access_token").GetString() ?? throw new InvalidOperationException("Google access token is missing.");
             using var request = new HttpRequestMessage(HttpMethod.Get, "https://openidconnect.googleapis.com/v1/userinfo");
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
             using var profileResponse = await client.SendAsync(request, ct);
-            profileResponse.EnsureSuccessStatusCode();
-            using var profile = JsonDocument.Parse(await profileResponse.Content.ReadAsStringAsync(ct));
+            var profileBody = await profileResponse.Content.ReadAsStringAsync(ct);
+            if (!profileResponse.IsSuccessStatusCode)
+                throw new InvalidOperationException($"Google user profile request failed ({(int)profileResponse.StatusCode}): {GetOAuthError(profileBody)}");
+
+            using var profile = JsonDocument.Parse(profileBody);
             return await CompleteExternalLoginAsync("Google", profile.RootElement.GetProperty("sub").GetString(), profile.RootElement.GetProperty("email").GetString(), GetJsonString(profile.RootElement, "name"), GetJsonString(profile.RootElement, "picture"), oauthState.ReturnUrl, settings, ct);
         }
         catch (Exception ex) { return OAuthFailure($"Google login failed: {ex.Message}", oauthState.ReturnUrl); }
@@ -435,6 +445,22 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IHttp
         if (string.IsNullOrWhiteSpace(value) || !value.StartsWith('/') || value.StartsWith("//")) return "/";
         return value.Length > 500 ? "/" : value;
     }
+    private static string GetOAuthError(string responseBody)
+    {
+        if (string.IsNullOrWhiteSpace(responseBody)) return "No response body.";
+        try
+        {
+            using var json = JsonDocument.Parse(responseBody);
+            var root = json.RootElement;
+            var error = GetJsonString(root, "error");
+            var description = GetJsonString(root, "error_description");
+            if (!string.IsNullOrWhiteSpace(error) && !string.IsNullOrWhiteSpace(description)) return $"{error}: {description}";
+            if (!string.IsNullOrWhiteSpace(error)) return error;
+        }
+        catch { }
+        return responseBody.Length <= 500 ? responseBody : responseBody[..500];
+    }
+
     private static string GetSetting(IReadOnlyDictionary<string, string> settings, string key) => settings.TryGetValue(key, out var value) ? value : string.Empty;
     private static bool IsTrue(IReadOnlyDictionary<string, string> settings, string key, bool fallback = false) => settings.TryGetValue(key, out var value) ? bool.TryParse(value, out var enabled) && enabled : fallback;
     private static string GetJsonString(JsonElement element, string property) => element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? string.Empty : string.Empty;
