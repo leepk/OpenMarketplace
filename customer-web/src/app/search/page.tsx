@@ -6,7 +6,6 @@ import {
   type PagedListings,
 } from "@/lib/api/apiClient";
 import { ListingCard } from "@/components/listings/ListingCard";
-import { ExternalListingCard } from "@/components/listings/ExternalListingCard";
 import { CategoryBrowser } from "@/components/categories/CategoryBrowser";
 import { Icon } from "@/components/ui/Icon";
 import { AdvertisementCarousel } from "@/components/ads/AdvertisementCarousel";
@@ -77,10 +76,6 @@ export default async function SearchPage({
   if (!categories.length) categories = fallbackCategories;
 
   const currentCategory = categories.find((c) => (c.code ?? c.slug) === params.category || c.slug === params.category);
-
-  // A single /listings request returns local results plus any supplemental
-  // external results selected by the backend. Customer never calls eBay directly.
-  const externalItems = data.external?.items ?? [];
 
   return (
     <main className="search-v2 shell-wide">
@@ -254,24 +249,7 @@ export default async function SearchPage({
             <ListingCard key={listing.id} listing={listing} variant="row" />
           ))}
         </div>
-        {externalItems.length > 0 && (
-          <section className="external-results-section" aria-labelledby="external-results-heading">
-            <div className="external-results-heading">
-              <div>
-                <span>PARTNER MARKETPLACE</span>
-                <h2 id="external-results-heading">More results from eBay</h2>
-                <p>External listings open on eBay. Vunoca listings are always shown first.</p>
-              </div>
-              <span className="external-results-count">{externalItems.length} results</span>
-            </div>
-            <div className="external-listing-grid">
-              {externalItems.map((item) => (
-                <ExternalListingCard key={item.externalId} item={item} />
-              ))}
-            </div>
-          </section>
-        )}
-        {!data.items.length && !externalItems.length && (
+        {!data.items.length && (
           <div className="empty-state-modern">
             <strong>
               <T k="noListingsFound" />

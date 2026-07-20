@@ -15,7 +15,6 @@ import { PaymentsPage } from '../../pages/PaymentsPage';
 import { ReportsPage } from '../../pages/ReportsPage';
 import { SettingsPage } from '../../pages/SettingsPage';
 import { SiteSettingsPage } from '../../pages/SiteSettingsPage';
-import { ExternalProvidersPage } from '../../pages/ExternalProvidersPage';
 import { LocalitiesPage } from '../../pages/LocalitiesPage';
 import { BlockedWordsPage } from '../../pages/BlockedWordsPage';
 import { HealthPage } from '../../pages/HealthPage';
@@ -27,7 +26,7 @@ const navGroups: Array<{ title: string; ids: AdminTab[] }> = [
   { title: 'Overview', ids: ['dashboard'] },
   { title: 'Marketplace', ids: ['pending', 'listings', 'categories', 'banners'] },
   { title: 'Users & Comms', ids: ['users', 'messages', 'notifications'] },
-  { title: 'Operations', ids: ['payments', 'reports', 'settings', 'siteSettings', 'externalProviders', 'localities', 'blockedWords', 'health'] },
+  { title: 'Operations', ids: ['payments', 'reports', 'settings', 'siteSettings', 'localities', 'blockedWords', 'health'] },
 ];
 
 export function AdminShell({ user, theme, setTheme, onLogout }: { user: AdminSessionUser; theme: Theme; setTheme: (t: Theme) => void; onLogout: () => void }) {
@@ -140,7 +139,6 @@ function PageRenderer({ tab }: { tab: AdminTab; title: string; description: stri
   if (tab === 'reports') return <ReportsPage />;
   if (tab === 'settings') return <SettingsPage />;
   if (tab === 'siteSettings') return <SiteSettingsPage />;
-  if (tab === 'externalProviders') return <ExternalProvidersPage />;
   if (tab === 'localities') return <LocalitiesPage />;
   if (tab === 'blockedWords') return <BlockedWordsPage />;
   return <HealthPage />;

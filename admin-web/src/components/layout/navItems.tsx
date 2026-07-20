@@ -15,7 +15,6 @@ export const navItems: NavItem[] = [
   { id: 'reports', path: adminRoutes.reports, label: 'Reports & Analytics', icon: <Icon name="chart" />, description: 'Marketplace trends, revenue and moderation stats.' },
   { id: 'settings', path: adminRoutes.settings, label: 'Package Manage', icon: <Icon name="settings" />, description: 'Manage listing packages and pricing.' },
   { id: 'siteSettings', path: adminRoutes.siteSettings, label: 'Site Settings', icon: <Icon name="site" />, description: 'Manage customer website logo, colors, contact links and SEO.' },
-  { id: 'externalProviders', path: adminRoutes.externalProviders, label: 'External Providers', icon: <Icon name="globe" />, description: 'Manage eBay and future external listing providers.' },
   { id: 'localities', path: adminRoutes.localities, label: 'Cities', icon: <Icon name="pin" />, description: 'Manage California cities, manual priority and popularity ranking.' },
   { id: 'blockedWords', path: adminRoutes.blockedWords, label: 'Blocked Words', icon: <Icon name="shield" />, description: 'Manage local keyword filters and moderation rules.' },
   { id: 'health', path: adminRoutes.health, label: 'System', icon: <Icon name="system" />, description: 'API health and diagnostic information.' },

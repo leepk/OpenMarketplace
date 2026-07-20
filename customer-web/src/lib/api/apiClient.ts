@@ -87,40 +87,8 @@ export type ListingDto = {
   lng?: number | string | null;
   images?: { url?: string | null }[];
 };
-export type PagedListings = {
-  items: ListingDto[];
-  totalItems: number;
-  page?: number;
-  pageSize?: number;
-  totalPages?: number;
-  query?: string | null;
-  external?: ExternalListingSearchResult | null;
-};
+export type PagedListings = { items: ListingDto[]; totalItems: number; page?: number; pageSize?: number; totalPages?: number };
 export type HomeFeed = { listings: ListingDto[]; featuredListings: ListingDto[]; recentListings: ListingDto[]; categories: CategoryDto[] };
-
-export type ExternalListingDto = {
-  externalId: string;
-  title: string;
-  price?: number | null;
-  currency?: string;
-  imageUrl?: string | null;
-  itemUrl: string;
-  condition?: string | null;
-  location?: string | null;
-  seller?: string | null;
-  itemEndDate?: string | null;
-  source: string;
-  isExternal: boolean;
-};
-export type ExternalListingSearchResult = {
-  enabled: boolean;
-  queried: boolean;
-  localResultCount: number;
-  minimumLocalResults: number;
-  items: ExternalListingDto[];
-  message?: string | null;
-};
-
 
 export const apiClient = {
   get<T>(path: string) { return request<T>(path); },
@@ -137,13 +105,6 @@ export const marketplaceApi = {
   saveUserLocation: (payload: { userId: string; label?: string; addressLine: string; city: string; state?: string; postalCode?: string; country?: string; latitude?: number | null; longitude?: number | null }) => apiClient.post<UserLocationDto>('/user-locations', payload),
   markUserLocationUsed: (id: string, userId: string) => apiClient.post(`/user-locations/${id}/used`, { userId }),
   categories: () => apiClient.get<CategoryDto[]>('/categories'),
-  externalEbayListings: (params?: { q?: string; categoryId?: string; postalCode?: string; limit?: number; force?: boolean }) => {
-    const qs = new URLSearchParams();
-    Object.entries(params ?? {}).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') qs.set(key, String(value));
-    });
-    return apiClient.get<ExternalListingSearchResult>(`/external-listings/ebay/search${qs.toString() ? `?${qs}` : ''}`);
-  },
   listings: (params?: Record<string, string | number | undefined>) => {
     const qs = new URLSearchParams();
     Object.entries(params ?? {}).forEach(([key, value]) => { if (value !== undefined && value !== '') qs.set(key, String(value)); });
