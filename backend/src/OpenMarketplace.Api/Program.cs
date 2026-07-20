@@ -82,7 +82,11 @@ try
     builder.Services.AddAuthorization();
 
     builder.Services.AddDataProtection();
+    builder.Services.AddMemoryCache();
     builder.Services.AddHttpClient();
+    builder.Services.AddHttpClient("ebay-browse", c => c.Timeout = TimeSpan.FromSeconds(20));
+    builder.Services.AddScoped<IEbayBrowseService, EbayBrowseService>();
+    builder.Services.AddScoped<IExternalMarketplaceService, ExternalMarketplaceService>();
     builder.Services.AddHttpClient("openai-moderation", c => c.Timeout = TimeSpan.FromSeconds(30));
     builder.Services.AddScoped<IContentModerationService, ContentModerationService>();
     builder.Services.AddControllers();

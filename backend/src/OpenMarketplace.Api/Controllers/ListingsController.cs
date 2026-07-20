@@ -12,7 +12,7 @@ namespace OpenMarketplace.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/listings")]
-public sealed class ListingsController(AppDbContext db, IContentModerationService moderation) : ControllerBase
+public sealed class ListingsController(AppDbContext db, IContentModerationService moderation, IExternalMarketplaceService externalMarketplaces) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<ApiResponse<object>>> Get(
@@ -199,6 +199,31 @@ public sealed class ListingsController(AppDbContext db, IContentModerationServic
             })
             .ToListAsync(ct);
 
+        ExternalMarketplaceSearchResult? external = null;
+        var isPublicSearch = !sellerId.HasValue &&
+            (string.IsNullOrWhiteSpace(status) || string.Equals(status, "All", StringComparison.OrdinalIgnoreCase));
+
+        if (isPublicSearch)
+        {
+            // Customer calls only this listings endpoint. The backend owns all
+            // provider enable/disable, local-threshold, cache and eBay API logic.
+            var externalQuery = searchTerm;
+            if (string.IsNullOrWhiteSpace(externalQuery) && !string.IsNullOrWhiteSpace(category))
+                externalQuery = category.Trim().Replace('_', ' ').Replace('-', ' ');
+
+            if (!string.IsNullOrWhiteSpace(externalQuery) && externalQuery.Length >= 2)
+            {
+                external = await externalMarketplaces.SearchAsync(
+                    externalQuery,
+                    categoryId: null,
+                    postalCode: null,
+                    limit: 100,
+                    force: false,
+                    localResultCount: total,
+                    ct: ct);
+            }
+        }
+
         return Ok(ApiResponse<object>.Ok(new
         {
             items,
@@ -206,7 +231,8 @@ public sealed class ListingsController(AppDbContext db, IContentModerationServic
             pageSize,
             totalItems = total,
             totalPages = (int)Math.Ceiling(total / (double)pageSize),
-            query = searchTerm
+            query = searchTerm,
+            external
         }, HttpContext.TraceIdentifier));
     }
 

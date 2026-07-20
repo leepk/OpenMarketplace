@@ -74,7 +74,32 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         ["template.email_payment_subject"] = "String",
         ["template.email_payment_body"] = "Text",
         ["template.sms_verification"] = "Text",
-        ["template.sms_payment"] = "Text"
+        ["template.sms_payment"] = "Text",
+        ["external.minimum_local_results"] = "String",
+        ["external.maximum_results"] = "String",
+        ["external.ebay.enabled"] = "Boolean",
+        ["external.ebay.priority"] = "String",
+        ["external.ebay.client_id"] = "String",
+        ["external.ebay.client_secret"] = "Secret",
+        ["external.ebay.campaign_id"] = "String",
+        ["external.ebay.marketplace_id"] = "String",
+        ["external.ebay.minimum_local_results"] = "String",
+        ["external.ebay.maximum_results"] = "String",
+        ["external.ebay.cache_minutes"] = "String",
+        ["external.amazon.enabled"] = "Boolean",
+        ["external.amazon.priority"] = "String",
+        ["external.amazon.access_key"] = "String",
+        ["external.amazon.secret_key"] = "Secret",
+        ["external.amazon.associate_tag"] = "String",
+        ["external.walmart.enabled"] = "Boolean",
+        ["external.walmart.priority"] = "String",
+        ["external.walmart.api_key"] = "Secret",
+        ["external.walmart.publisher_id"] = "String",
+        ["external.aliexpress.enabled"] = "Boolean",
+        ["external.aliexpress.priority"] = "String",
+        ["external.aliexpress.app_key"] = "String",
+        ["external.aliexpress.app_secret"] = "Secret",
+        ["external.aliexpress.tracking_id"] = "String"
     };
 
     [HttpGet("api/v1/site-settings")]
@@ -97,7 +122,7 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
     {
         await EnsureDefaultsAsync(ct);
         var entities = await db.AppSettings.AsNoTracking()
-            .Where(x => !x.IsDeleted && (x.Key.StartsWith("site.") || x.Key.StartsWith("social.") || x.Key.StartsWith("contact.") || x.Key.StartsWith("footer.") || x.Key.StartsWith("seo.") || x.Key.StartsWith("moderation.") || x.Key.StartsWith("auth.") || x.Key.StartsWith("payment.") || x.Key.StartsWith("email.") || x.Key.StartsWith("sms.") || x.Key.StartsWith("template.")))
+            .Where(x => !x.IsDeleted && (x.Key.StartsWith("site.") || x.Key.StartsWith("social.") || x.Key.StartsWith("contact.") || x.Key.StartsWith("footer.") || x.Key.StartsWith("seo.") || x.Key.StartsWith("moderation.") || x.Key.StartsWith("auth.") || x.Key.StartsWith("payment.") || x.Key.StartsWith("email.") || x.Key.StartsWith("sms.") || x.Key.StartsWith("template.") || x.Key.StartsWith("external.")))
             .OrderBy(x => x.Key)
             .ToListAsync(ct);
 
@@ -204,6 +229,17 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         {
             db.AppSettings.Add(new AppSetting { Key = row.Key, Value = row.Value, ValueType = row.ValueType, IsPublic = IsPublicKey(row.Key) });
         }
+
+        // Upgrade the original eBay integration default from 20 to 100. Preserve any
+        // administrator-defined value other than the old default.
+        var ebayMaximum = await db.AppSettings.FirstOrDefaultAsync(
+            x => x.Key == "external.ebay.maximum_results" && !x.IsDeleted, ct);
+        if (ebayMaximum is not null && ebayMaximum.Value?.Trim() == "20")
+        {
+            ebayMaximum.Value = "100";
+            ebayMaximum.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
         if (db.ChangeTracker.HasChanges()) await db.SaveChangesAsync(ct);
     }
 
@@ -270,7 +306,32 @@ public sealed class SiteSettingsController(AppDbContext db) : ControllerBase
         ("template.email_payment_subject", "Payment received - {{orderNumber}}", "String"),
         ("template.email_payment_body", "We received {{amount}} for order {{orderNumber}}.", "Text"),
         ("template.sms_verification", "{{siteName}} verification code: {{code}}", "Text"),
-        ("template.sms_payment", "Payment {{amount}} received for {{orderNumber}}.", "Text")
+        ("template.sms_payment", "Payment {{amount}} received for {{orderNumber}}.", "Text"),
+        ("external.minimum_local_results", "10", "String"),
+        ("external.maximum_results", "100", "String"),
+        ("external.ebay.enabled", "false", "Boolean"),
+        ("external.ebay.priority", "1", "String"),
+        ("external.ebay.client_id", "", "String"),
+        ("external.ebay.client_secret", "", "Secret"),
+        ("external.ebay.campaign_id", "", "String"),
+        ("external.ebay.marketplace_id", "EBAY_US", "String"),
+        ("external.ebay.minimum_local_results", "10", "String"),
+        ("external.ebay.maximum_results", "100", "String"),
+        ("external.ebay.cache_minutes", "30", "String"),
+        ("external.amazon.enabled", "false", "Boolean"),
+        ("external.amazon.priority", "2", "String"),
+        ("external.amazon.access_key", "", "String"),
+        ("external.amazon.secret_key", "", "Secret"),
+        ("external.amazon.associate_tag", "", "String"),
+        ("external.walmart.enabled", "false", "Boolean"),
+        ("external.walmart.priority", "3", "String"),
+        ("external.walmart.api_key", "", "Secret"),
+        ("external.walmart.publisher_id", "", "String"),
+        ("external.aliexpress.enabled", "false", "Boolean"),
+        ("external.aliexpress.priority", "4", "String"),
+        ("external.aliexpress.app_key", "", "String"),
+        ("external.aliexpress.app_secret", "", "Secret"),
+        ("external.aliexpress.tracking_id", "", "String")
     ];
 
     private static bool IsSecretType(string? valueType) => string.Equals(valueType, "Secret", StringComparison.OrdinalIgnoreCase);
