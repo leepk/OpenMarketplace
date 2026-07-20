@@ -13,6 +13,7 @@ export type AdminTab =
   | 'reports'
   | 'settings'
   | 'siteSettings'
+  | 'externalProviders'
   | 'blockedWords'
   | 'localities'
   | 'health';
