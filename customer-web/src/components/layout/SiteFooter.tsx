@@ -32,9 +32,9 @@ export function SiteFooter() {
         </div>
         <div><h4>{t('marketplace')}</h4><Link href="/search">{t('browseListings')}</Link><Link href="/post">{t('postListing')}</Link><Link href="/map">{t('mapSearch')}</Link><Link href="/favorites">{t('savedListings')}</Link></div>
         <div><h4>{t('account')}</h4><Link href="/login">{t('login')}</Link><Link href="/register">{t('createAccount')}</Link><Link href="/messages">{t('messages')}</Link><Link href="/notifications">{t('notifications')}</Link></div>
-        <div><h4>{t('trustSafety')}</h4><Link href="/search?category=services">{t('verifiedSellers')}</Link><Link href="/billing">{t('promoteSafely')}</Link><Link href="/profile">{t('sellerProfile')}</Link><Link href="/search">{t('reportListing')}</Link></div>
+        <div><h4>{t('trustSafety')}</h4><Link href="/privacy">{t('privacy')}</Link><Link href="/terms">{t('terms')}</Link><Link href="/contact">Contact Us</Link><Link href="/data-deletion">Data Deletion</Link></div>
       </div>
-      <div className="shell-wide footer-modern-bottom"><span>© {new Date().getFullYear()} {siteName}</span><span>{t('privacyLine')}</span></div>
+      <div className="shell-wide footer-modern-bottom"><span>© {new Date().getFullYear()} {siteName}</span><span className="footer-legal-links"><Link href="/privacy">{t('privacy')}</Link><Link href="/terms">{t('terms')}</Link><Link href="/contact">Contact</Link></span></div>
     </footer>
   );
 }

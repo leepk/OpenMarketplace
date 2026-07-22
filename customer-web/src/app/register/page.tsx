@@ -36,13 +36,11 @@ export default function Page() {
     const name = `${firstName} ${lastName}`.trim();
     const email = String(f.get('email') ?? '').trim().toLowerCase();
     const passwordValue = String(f.get('password') ?? '');
-    const confirmPassword = String(f.get('confirmPassword') ?? '');
     const agreed = f.get('agreeTerms') === 'on';
     if (!firstName) { setMsg(t('firstNameRequired')); setBusy(false); return; }
     if (!lastName) { setMsg(t('lastNameRequired')); setBusy(false); return; }
     if (!email || !email.includes('@')) { setMsg(t('validEmailRequired')); setBusy(false); return; }
     if (passwordValue.length < 6) { setMsg(t('passwordMin')); setBusy(false); return; }
-    if (passwordValue !== confirmPassword) { setMsg(t('passwordsNoMatch')); setBusy(false); return; }
     if (!agreed) { setMsg(t('agreeTermsRequired')); setBusy(false); return; }
     try {
       const r: any = await apiClient.post('/auth/register', {
@@ -82,15 +80,12 @@ export default function Page() {
 
           <label>{t('email')} <b>*</b><input name="email" required type="email" placeholder={t('emailPlaceholder')} autoComplete="email" /></label>
 
-          <div className="auth-two-v2">
-            <label>{t('password')} <b>*</b>
-              <div className="auth-password-wrap">
-                <input name="password" required minLength={6} type={showPassword ? 'text' : 'password'} placeholder={t('createPassword')} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                <button type="button" onClick={() => setShowPassword(v => !v)}>{showPassword ? t('hide') : t('show')}</button>
-              </div>
-            </label>
-            <label>{t('confirmPassword')} <b>*</b><input name="confirmPassword" required minLength={6} type={showPassword ? 'text' : 'password'} placeholder={t('confirmPasswordPlaceholder')} autoComplete="new-password" /></label>
-          </div>
+          <label>{t('password')} <b>*</b>
+            <div className="auth-password-wrap">
+              <input name="password" required minLength={6} type={showPassword ? 'text' : 'password'} placeholder={t('createPassword')} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <button type="button" onClick={() => setShowPassword(v => !v)}>{showPassword ? t('hide') : t('show')}</button>
+            </div>
+          </label>
 
           <div className="password-meter" aria-label={t('passwordStrength')}>
             <span className={passwordStrength >= 1 ? 'on' : ''}></span>
@@ -104,7 +99,10 @@ export default function Page() {
 
           <button className="auth-primary-v2" type="submit" disabled={busy}>{busy ? t('creating') : t('createAccount')}</button>
           <div className="auth-divider-v2"><span>{t('orContinueWith')}</span></div>
-          <div className="auth-social-v2">{providers.google?.enabled && <a href={`${appConfig.apiBaseUrl}/auth/external/google?returnUrl=${encodeURIComponent('/profile')}`}>Google</a>}{providers.facebook?.enabled && <a href={`${appConfig.apiBaseUrl}/auth/external/facebook?returnUrl=${encodeURIComponent('/profile')}`}>Facebook</a>}</div>
+          {(providers.google?.enabled || providers.facebook?.enabled) && <div className="social-auth-stack">
+            {providers.google?.enabled && <a className="auth-social-provider-v2" href={`${appConfig.apiBaseUrl}/auth/external/google?returnUrl=${encodeURIComponent('/profile')}`}>{t('continueWithGoogle')}</a>}
+            {providers.facebook?.enabled && <a className="auth-social-provider-v2" href={`${appConfig.apiBaseUrl}/auth/external/facebook?returnUrl=${encodeURIComponent('/profile')}`}>{t('continueWithFacebook')}</a>}
+          </div>}
           <p className="auth-switch-v2">{t('alreadyHaveAccount')} <Link href="/login">{t('login')}</Link></p>
           {msg && <p className="form-error">{msg}</p>}
         </form>
