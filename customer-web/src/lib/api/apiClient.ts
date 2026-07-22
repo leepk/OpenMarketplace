@@ -96,7 +96,17 @@ export type PagedListings = {
   query?: string | null;
   external?: ExternalListingSearchResult | null;
 };
-export type HomeFeed = { listings: ListingDto[]; featuredListings: ListingDto[]; recentListings: ListingDto[]; categories: CategoryDto[] };
+export type HomeFeed = {
+  listings: ListingDto[];
+  featuredListings: ListingDto[];
+  recentListings: ListingDto[];
+  categories: CategoryDto[];
+  page?: number;
+  pageSize?: number;
+  totalItems?: number;
+  totalPages?: number;
+  external?: ExternalListingSearchResult | null;
+};
 
 export type ExternalListingDto = {
   externalId: string;
@@ -130,7 +140,7 @@ export const apiClient = {
 };
 
 export const marketplaceApi = {
-  home: (params?: { latitude?: number; longitude?: number }) => { const qs = new URLSearchParams(); if (params?.latitude != null) qs.set('latitude', String(params.latitude)); if (params?.longitude != null) qs.set('longitude', String(params.longitude)); return apiClient.get<HomeFeed>(`/feed/home${qs.toString() ? `?${qs}` : ''}`); },
+  home: (params?: { latitude?: number; longitude?: number; page?: number; pageSize?: number }) => { const qs = new URLSearchParams(); if (params?.latitude != null) qs.set('latitude', String(params.latitude)); if (params?.longitude != null) qs.set('longitude', String(params.longitude)); qs.set('page', String(params?.page ?? 1)); qs.set('pageSize', String(params?.pageSize ?? 100)); return apiClient.get<HomeFeed>(`/feed/home?${qs}`); },
   cities: () => apiClient.get<CityDto[]>('/locations/cities?state=CA&limit=1000'),
   citySelected: (id: string) => apiClient.post(`/locations/cities/${id}/selected`, {}),
   userLocations: (userId: string, coords?: { latitude?: number; longitude?: number }) => { const qs = new URLSearchParams({ userId }); if (coords?.latitude != null) qs.set('latitude', String(coords.latitude)); if (coords?.longitude != null) qs.set('longitude', String(coords.longitude)); return apiClient.get<UserLocationDto[]>(`/user-locations?${qs}`); },

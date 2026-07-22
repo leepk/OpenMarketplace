@@ -23,7 +23,7 @@ public sealed class ListingsController(AppDbContext db, IContentModerationServic
         [FromQuery] Guid? sellerId,
         [FromQuery] string? sort,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 25,
+        [FromQuery] int pageSize = 100,
         CancellationToken ct = default)
     {
         page = Math.Max(1, page);

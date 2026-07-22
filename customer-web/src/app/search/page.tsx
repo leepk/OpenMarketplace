@@ -5,8 +5,7 @@ import {
   type CategoryDto,
   type PagedListings,
 } from "@/lib/api/apiClient";
-import { ListingCard } from "@/components/listings/ListingCard";
-import { ExternalListingCard } from "@/components/listings/ExternalListingCard";
+import { ProgressiveListingResults } from "@/components/listings/ProgressiveListingResults";
 import { CategoryBrowser } from "@/components/categories/CategoryBrowser";
 import { Icon } from "@/components/ui/Icon";
 import { AdvertisementCarousel } from "@/components/ads/AdvertisementCarousel";
@@ -60,7 +59,7 @@ export default async function SearchPage({
         q: normalizedQuery || undefined,
         category: params.category,
         page: Number(params.page ?? 1),
-        pageSize: 25,
+        pageSize: 100,
         sort: params.sort,
       }),
       marketplaceApi.categories(),
@@ -249,28 +248,12 @@ export default async function SearchPage({
           </div>
         </div>
 
-        <div className="listing-feed-list search-results-list">
-          {data.items.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} variant="row" />
-          ))}
-        </div>
-        {externalItems.length > 0 && (
-          <section className="external-results-section" aria-labelledby="external-results-heading">
-            <div className="external-results-heading">
-              <div>
-                <span>PARTNER MARKETPLACE</span>
-                <h2 id="external-results-heading">More results from eBay</h2>
-                <p>External listings open on eBay. Vunoca listings are always shown first.</p>
-              </div>
-              <span className="external-results-count">{externalItems.length} results</span>
-            </div>
-            <div className="external-listing-grid">
-              {externalItems.map((item) => (
-                <ExternalListingCard key={item.externalId} item={item} />
-              ))}
-            </div>
-          </section>
-        )}
+        <ProgressiveListingResults
+          localItems={data.items}
+          externalItems={externalItems}
+          initialCount={20}
+          increment={20}
+        />
         {!data.items.length && !externalItems.length && (
           <div className="empty-state-modern">
             <strong>

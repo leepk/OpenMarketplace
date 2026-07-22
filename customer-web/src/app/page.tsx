@@ -6,7 +6,7 @@ import { FeaturedListings } from '@/components/home/FeaturedListings';
 import { FeedToolbar } from '@/components/home/FeedToolbar';
 import { RightRail } from '@/components/home/RightRail';
 import { AdvertisementCarousel } from '@/components/ads/AdvertisementCarousel';
-import { ListingCard } from '@/components/listings/ListingCard';
+import { ProgressiveListingResults } from '@/components/listings/ProgressiveListingResults';
 import { marketplaceApi, type CategoryDto, type HomeFeed, type ListingDto } from '@/lib/api/apiClient';
 
 const fallbackCategories: CategoryDto[] = [
@@ -21,7 +21,7 @@ const fallbackCategories: CategoryDto[] = [
 ];
 
 const fallbackListings: ListingDto[] = [];
-const emptyFeed: HomeFeed = { listings: [], featuredListings: [], recentListings: [], categories: [] };
+const emptyFeed: HomeFeed = { listings: [], featuredListings: [], recentListings: [], categories: [], external: null };
 
 export default function HomePage() {
   const [feed, setFeed] = useState<HomeFeed>(emptyFeed);
@@ -31,7 +31,7 @@ export default function HomePage() {
 
     const loadNewest = async () => {
       try {
-        const data = await marketplaceApi.home();
+        const data = await marketplaceApi.home({ page: 1, pageSize: 100 });
         if (!cancelled) setFeed(data);
       } catch {
         if (!cancelled) setFeed({ ...emptyFeed, categories: fallbackCategories });
@@ -50,6 +50,8 @@ export default function HomePage() {
             const data = await marketplaceApi.home({
               latitude: position.coords.latitude,
               longitude: position.coords.longitude,
+              page: 1,
+              pageSize: 100,
             });
             if (!cancelled) setFeed(data);
           } catch {
@@ -69,7 +71,8 @@ export default function HomePage() {
   const allListings = [...(feed.featuredListings ?? []), ...(feed.recentListings ?? []), ...(feed.listings ?? [])];
   const listings = allListings.length ? Array.from(new Map(allListings.map(x => [x.id, x])).values()) : fallbackListings;
   const featured = (feed.featuredListings?.length ? feed.featuredListings : listings).slice(0, 3);
-  const rows = useMemo(() => (feed.recentListings?.length ? feed.recentListings : listings).slice(0, 12), [feed.recentListings, listings]);
+  const rows = useMemo(() => (feed.recentListings?.length ? feed.recentListings : listings), [feed.recentListings, listings]);
+  const externalItems = feed.external?.items ?? [];
 
   return (
     <main className="market-home shell-wide">
@@ -78,10 +81,13 @@ export default function HomePage() {
         <AdvertisementCarousel placement="HOME_HERO" variant="hero" />
         {featured.length > 0 && <FeaturedListings items={featured} />}
         <FeedToolbar categories={categories} />
-        <div className="listing-feed-list">
-          {rows.map((listing, idx) => <ListingCard key={listing.id ?? idx} listing={listing} variant="row" />)}
-          <AdvertisementCarousel placement="HOME_FEED" variant="inline" />
-        </div>
+        <ProgressiveListingResults
+          localItems={rows}
+          externalItems={externalItems}
+          initialCount={20}
+          increment={20}
+        />
+        <AdvertisementCarousel placement="HOME_FEED" variant="inline" />
       </section>
       <RightRail categories={categories} promoted={listings[1] ?? listings[0]} />
     </main>
