@@ -125,7 +125,7 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IHttp
         var callback = BuildCallbackUrl("google");
         var state = ProtectOAuthState("google", returnUrl);
         var url = "https://accounts.google.com/o/oauth2/v2/auth" +
-                  $"?client_id={Uri.EscapeDataString(clientId)}&redirect_uri={Uri.EscapeDataString(callback)}&response_type=code&scope={Uri.EscapeDataString("openid email profile")}&state={Uri.EscapeDataString(state)}&prompt=select_account";
+                  $"?client_id={Uri.EscapeDataString(clientId)}&redirect_uri={Uri.EscapeDataString(callback)}&response_type=code&state={Uri.EscapeDataString(state)}&prompt=select_account";
         return Redirect(url);
     }
 
@@ -181,7 +181,7 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IHttp
         var callback = BuildCallbackUrl("facebook");
         var state = ProtectOAuthState("facebook", returnUrl);
         var url = "https://www.facebook.com/v23.0/dialog/oauth" +
-                  $"?client_id={Uri.EscapeDataString(appId)}&redirect_uri={Uri.EscapeDataString(callback)}&response_type=code&scope={Uri.EscapeDataString("email,public_profile")}&state={Uri.EscapeDataString(state)}";
+                  $"?client_id={Uri.EscapeDataString(appId)}&redirect_uri={Uri.EscapeDataString(callback)}&response_type=code&state={Uri.EscapeDataString(state)}";
         return Redirect(url);
     }
 
