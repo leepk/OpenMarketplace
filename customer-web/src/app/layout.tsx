@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { SiteSettingsProvider } from '@/lib/site-settings';
 import { appConfig } from '@/lib/config';
+
+const GA_MEASUREMENT_ID = 'G-V1Y2G157JR';
 
 const DEFAULT_TITLE = 'OpenMarketplace';
 const DEFAULT_DESCRIPTION = 'Local classifieds marketplace';
@@ -92,6 +95,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <MobileBottomNav />
           <SiteFooter />
         </SiteSettingsProvider>
+
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
       </body>
     </html>
   );
