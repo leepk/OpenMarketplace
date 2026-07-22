@@ -181,7 +181,11 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IHttp
         var callback = BuildCallbackUrl("facebook");
         var state = ProtectOAuthState("facebook", returnUrl);
         var url = "https://www.facebook.com/v23.0/dialog/oauth" +
-                  $"?client_id={Uri.EscapeDataString(appId)}&redirect_uri={Uri.EscapeDataString(callback)}&response_type=code&state={Uri.EscapeDataString(state)}";
+                  $"?client_id={Uri.EscapeDataString(appId)}" +
+                  $"&redirect_uri={Uri.EscapeDataString(callback)}" +
+                  "&response_type=code" +
+                  $"&scope={Uri.EscapeDataString("email")}" +
+                  $"&state={Uri.EscapeDataString(state)}";
         return Redirect(url);
     }
 
@@ -207,9 +211,76 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IHttp
             profileResponse.EnsureSuccessStatusCode();
             using var profile = JsonDocument.Parse(await profileResponse.Content.ReadAsStringAsync(ct));
             var picture = profile.RootElement.TryGetProperty("picture", out var pictureNode) && pictureNode.TryGetProperty("data", out var dataNode) ? GetJsonString(dataNode, "url") : string.Empty;
-            return await CompleteExternalLoginAsync("Facebook", GetJsonString(profile.RootElement, "id"), GetJsonString(profile.RootElement, "email"), GetJsonString(profile.RootElement, "name"), picture, oauthState.ReturnUrl, settings, ct);
+            var providerUserId = GetJsonString(profile.RootElement, "id");
+            var email = GetJsonString(profile.RootElement, "email");
+            var name = GetJsonString(profile.RootElement, "name");
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                if (string.IsNullOrWhiteSpace(providerUserId))
+                    return OAuthFailure("Facebook did not provide a valid user identifier.", oauthState.ReturnUrl);
+
+                var completionTicket = ProtectExternalProfileCompletion(new ExternalProfileCompletion(
+                    "Facebook",
+                    providerUserId,
+                    name,
+                    picture,
+                    NormalizeReturnUrl(oauthState.ReturnUrl),
+                    DateTimeOffset.UtcNow.AddMinutes(15)));
+                var customerBaseUrl = (config["Customer:BaseUrl"] ?? config["Frontend:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
+                return Redirect($"{customerBaseUrl}/auth/complete-profile?ticket={Uri.EscapeDataString(completionTicket)}");
+            }
+
+            return await CompleteExternalLoginAsync("Facebook", providerUserId, email, name, picture, oauthState.ReturnUrl, settings, ct);
         }
         catch (Exception ex) { return OAuthFailure($"Facebook login failed: {ex.Message}", oauthState.ReturnUrl); }
+    }
+
+
+    [HttpPost("external/complete-profile")]
+    public async Task<ActionResult<ApiResponse<object>>> CompleteExternalProfile(CompleteExternalProfileRequest request, CancellationToken ct)
+    {
+        ExternalProfileCompletion completion;
+        try
+        {
+            completion = UnprotectExternalProfileCompletion(request.Ticket);
+        }
+        catch
+        {
+            return BadRequest(ApiResponse<object>.Fail("InvalidTicket", "This sign-in request is invalid or has expired. Please try Facebook login again.", HttpContext.TraceIdentifier));
+        }
+
+        var email = (request.Email ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+            return BadRequest(ApiResponse<object>.Fail("Validation", "A valid email address is required.", HttpContext.TraceIdentifier));
+
+        var existing = await db.UserProfiles.FirstOrDefaultAsync(x => x.Email == email && !x.IsDeleted, ct);
+        if (existing is not null)
+            return Conflict(ApiResponse<object>.Fail("EmailExists", "This email is already registered. Sign in with your existing account, then connect Facebook from account settings.", HttpContext.TraceIdentifier));
+
+        var user = new UserProfile
+        {
+            Name = string.IsNullOrWhiteSpace(completion.Name) ? email.Split('@')[0] : completion.Name.Trim(),
+            Email = email,
+            Role = "Customer",
+            Source = completion.Provider,
+            PasswordHash = string.Empty,
+            AvatarUrl = string.IsNullOrWhiteSpace(completion.AvatarUrl) ? DefaultAvatar(email) : completion.AvatarUrl,
+            EmailVerified = false,
+            TrustScore = 50,
+            Status = "Active"
+        };
+        db.UserProfiles.Add(user);
+        await db.SaveChangesAsync(ct);
+
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            user = ToSafeUser(user),
+            token = CreateJwtToken(user, false, TimeSpan.FromDays(7)),
+            tokenType = "Bearer",
+            returnUrl = NormalizeReturnUrl(completion.ReturnUrl),
+            emailVerificationRequired = true
+        }, HttpContext.TraceIdentifier));
     }
 
     [HttpPost("send-phone-verification")]
@@ -396,6 +467,23 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IHttp
             return value with { ReturnUrl = NormalizeReturnUrl(value.ReturnUrl) };
         }
         catch { return new OAuthState(expectedProvider, "/", DateTimeOffset.UtcNow); }
+    }
+
+
+    private string ProtectExternalProfileCompletion(ExternalProfileCompletion value)
+    {
+        var payload = JsonSerializer.Serialize(value);
+        return dataProtectionProvider.CreateProtector("OpenMarketplace.ExternalOAuth.ProfileCompletion.v1").Protect(payload);
+    }
+
+    private ExternalProfileCompletion UnprotectExternalProfileCompletion(string? ticket)
+    {
+        if (string.IsNullOrWhiteSpace(ticket)) throw new InvalidOperationException("Missing completion ticket.");
+        var json = dataProtectionProvider.CreateProtector("OpenMarketplace.ExternalOAuth.ProfileCompletion.v1").Unprotect(ticket);
+        var value = JsonSerializer.Deserialize<ExternalProfileCompletion>(json) ?? throw new InvalidOperationException("Invalid completion ticket.");
+        if (value.ExpiresAt < DateTimeOffset.UtcNow || !string.Equals(value.Provider, "Facebook", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Completion ticket expired.");
+        return value with { ReturnUrl = NormalizeReturnUrl(value.ReturnUrl) };
     }
 
     private async Task<IActionResult> CompleteExternalLoginAsync(string provider, string? providerUserId, string? email, string? name, string? avatarUrl, string returnUrl, Dictionary<string, string> settings, CancellationToken ct)
@@ -599,5 +687,7 @@ public sealed record ForgotPasswordRequest(string Email);
 public sealed record ResetPasswordRequest(string Email, string Token, string NewPassword);
 public sealed record SendPhoneVerificationRequest(Guid UserId);
 public sealed record VerifyPhoneRequest(Guid UserId, string Code);
+public sealed record CompleteExternalProfileRequest(string Ticket, string Email);
 
+public sealed record ExternalProfileCompletion(string Provider, string ProviderUserId, string Name, string AvatarUrl, string ReturnUrl, DateTimeOffset ExpiresAt);
 public sealed record OAuthState(string Provider, string ReturnUrl, DateTimeOffset ExpiresAt);
