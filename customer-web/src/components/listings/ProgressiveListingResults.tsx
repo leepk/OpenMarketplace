@@ -33,6 +33,8 @@ export function ProgressiveListingResults({
   const visibleLocal = visible.filter((x) => x.kind === 'local');
   const visibleExternal = visible.filter((x) => x.kind === 'external');
   const hasMore = visibleCount < combined.length;
+  const providerNames = Array.from(new Set(externalItems.map((item) => item.source).filter(Boolean)));
+  const providerLabel = providerNames.length === 1 ? providerNames[0] : providerNames.length > 1 ? providerNames.join(' & ') : 'partner stores';
 
   return (
     <>
@@ -48,8 +50,8 @@ export function ProgressiveListingResults({
             <div className="external-results-heading">
               <div>
                 <span>PARTNER MARKETPLACE</span>
-                <h2 id="external-results-heading">More results from eBay</h2>
-                <p>External listings open on eBay. Vunoca listings are always shown first.</p>
+                <h2 id="external-results-heading">More results from {providerLabel}</h2>
+                <p>Open a product detail page on Vunoca first, then continue to the partner store when ready to buy.</p>
               </div>
               <span className="external-results-count">{externalItems.length} results</span>
             </div>

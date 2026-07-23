@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api/apiClient';
 import { saveSession } from '@/lib/api/session';
 import { appConfig } from '@/lib/config';
 import { useI18n } from '@/lib/i18n/client';
+import { analytics } from '@/lib/analytics';
 
 export default function Page() {
   const { t } = useI18n();
@@ -53,6 +54,7 @@ export default function Page() {
         source: 'WebCustomer'
       });
       saveSession(r);
+      analytics.signUp('email');
       window.location.href = '/profile';
     } catch (err: any) { setMsg(err.message ?? t('registerFailed')); }
     finally { setBusy(false); }

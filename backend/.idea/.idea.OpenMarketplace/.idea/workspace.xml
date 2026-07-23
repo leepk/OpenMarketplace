@@ -10,8 +10,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="19bb964e-0244-49ac-a987-4809ad096fe8" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Api/Controllers/AuthController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpenMarketplace.Api/Controllers/AuthController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/OpenMarketplace.Api/logs/openmarketplace-api-20260722.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.OpenMarketplace/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.OpenMarketplace/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../customer-web/src/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/../customer-web/src/app/globals.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../customer-web/src/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../customer-web/src/app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../customer-web/src/app/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../customer-web/src/app/login/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../customer-web/src/app/post/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../customer-web/src/app/post/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../customer-web/src/app/register/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../customer-web/src/app/register/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../customer-web/src/components/detail/MessageSellerForm.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../customer-web/src/components/detail/MessageSellerForm.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../customer-web/src/components/listings/ExternalListingCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../customer-web/src/components/listings/ExternalListingCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../customer-web/src/components/listings/ProgressiveListingResults.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../customer-web/src/components/listings/ProgressiveListingResults.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

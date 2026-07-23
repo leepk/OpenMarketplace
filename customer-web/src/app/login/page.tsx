@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api/apiClient';
 import { saveSession } from '@/lib/api/session';
 import { appConfig } from '@/lib/config';
 import { useI18n } from '@/lib/i18n/client';
+import { analytics } from '@/lib/analytics';
 
 export default function Page() {
   const { t } = useI18n();
@@ -30,6 +31,7 @@ export default function Page() {
     try {
       const r: any = await apiClient.post('/auth/login', { email, password });
       saveSession(r);
+      analytics.login('email');
       window.location.href = returnUrl;
     } catch (err: any) { setMsg(err.message ?? t('loginFailed')); }
     finally { setBusy(false); }

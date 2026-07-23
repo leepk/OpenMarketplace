@@ -8,6 +8,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useI18n } from '@/lib/i18n/client';
 import { StripePaymentElement } from '@/components/payment/StripePaymentElement';
 import { PayPalButtons } from '@/components/payment/PayPalButtons';
+import { analytics } from '@/lib/analytics';
 
 const steps = [
   { id: 1, title: 'Details', hint: 'Title & category' },
@@ -360,6 +361,7 @@ export default function PostListingPage() {
         await marketplaceApi.uploadMedia(fd);
       }
 
+      analytics.postListing({ listing_id: listing.id, item_name: form.title.trim(), category_id: form.categoryId, value: Number(form.price || 0), currency: 'USD', package_code: form.packageCode });
       setSavedId(listing.id);
       setSaved(`Payment ${checkout?.payment?.status ?? 'completed'}. Listing submitted. ${photos.length ? `${photos.length} photo(s) uploaded. ` : ''}It is now in My Listings with status ${listing.status ?? 'Pending'}.`);
       setStep(5);

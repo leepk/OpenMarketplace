@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Icon } from '@/components/ui/Icon';
 import { marketplaceApi } from '@/lib/api/apiClient';
 import { useI18n } from '@/lib/i18n/client';
+import { analytics } from '@/lib/analytics';
 
 export function MessageSellerForm({ listingId }: { listingId: string }) {
   const { t } = useI18n();
@@ -16,6 +17,7 @@ export function MessageSellerForm({ listingId }: { listingId: string }) {
     setStatus(t('processing'));
     try {
       await marketplaceApi.messageSeller(listingId, message.trim());
+      analytics.contactSeller({ listing_id: listingId, method: 'message' });
       setStatus(`${t('messages')} ${t('success').toLowerCase()}.`);
     } catch (err: any) {
       setStatus(err?.message ?? t('saveFailed'));

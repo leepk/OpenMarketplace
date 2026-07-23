@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
+import { Suspense } from 'react';
 import './globals.css';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { SiteSettingsProvider } from '@/lib/site-settings';
 import { appConfig } from '@/lib/config';
+import { AnalyticsPageView } from '@/components/analytics/AnalyticsPageView';
+import { GA_MEASUREMENT_ID } from '@/lib/analytics';
 
-const GA_MEASUREMENT_ID = 'G-V1Y2G157JR';
 
 const DEFAULT_TITLE = 'OpenMarketplace';
 const DEFAULT_DESCRIPTION = 'Local classifieds marketplace';
@@ -94,6 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="page-shell">{children}</main>
           <MobileBottomNav />
           <SiteFooter />
+          <Suspense fallback={null}><AnalyticsPageView /></Suspense>
         </SiteSettingsProvider>
 
         <Script
@@ -105,7 +108,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
+            gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
           `}
         </Script>
       </body>
